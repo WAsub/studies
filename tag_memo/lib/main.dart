@@ -27,39 +27,75 @@ class TagMemo extends StatefulWidget {
 }
 
 class _TagMemoState extends State<TagMemo> {
-  int _counter = 0;
 
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
+  List<int> lists= [0,1,2,3,4,5,6,7,8,9];
+  double deviceHeight;
+  double screenHeight;
+  double screenWidth;
+  double gv; 
+  double appb;
+
+  double x = 0;
+  double y = 0;
 
   @override
   Widget build(BuildContext context) {
+    final Size size = MediaQuery.of(context).size;
+    deviceHeight = size.height;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ),
+      body: LayoutBuilder(builder: (context, constraints) {
+            screenHeight = constraints.maxHeight;
+            screenWidth = constraints.maxWidth;
+            gv = screenWidth/3;
+            appb = deviceHeight - screenHeight;
+            print(size.height);
+            print(screenHeight);
+            return GridView.count(
+          crossAxisCount: 3,
+          crossAxisSpacing: 4.0, // 縦スペース
+          mainAxisSpacing: 4.0, // 横スペース
+          children: List.generate(lists.length, (index) {
+            
+            return GestureDetector(
+              // ドラッグ中に呼ばれる
+              onPanUpdate: (DragUpdateDetails details) {
+                print('onPanUpdate - ${details.globalPosition.dy.toString()}');
+                // details.globalPosition; //グローバル座標
+                // details.localPosition; //ローカル座標
+                // details.delta; //前回からの移動量
+                setState(() {
+                  x = details.globalPosition.dx;
+                  y = details.globalPosition.dy - appb;
+                });
+              },
+              onPanStart: (DragStartDetails details) {
+                print('onPanStart - ${details.toString()}');
+              },
+              onPanEnd: (DragEndDetails details) {
+                print('onPanEnd - ${details.toString()}');
+                print('onPanEnd - ${details.toString()}');
+                print('x - ${x.toString()}');
+                print('y - ${y.toString()}');
+                // setState(() {
+                //   lists[]
+                // });
+              },
+              child: Container(
+                color: Colors.redAccent[100],
+                child: Text(
+                  'Item '+ lists[index].toString(),
+                ),
+              )
+            );
+          }),
+          
+        );
+      }),
+      
+      
     );
   }
 }
