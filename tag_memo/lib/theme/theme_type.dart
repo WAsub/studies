@@ -18,7 +18,7 @@ class ThemeType {
 
 
   static ThemeType of(String theme) {
-    return ThemeType.values().firstWhere((e) => e.toString() == theme);
+    return ThemeType.values().firstWhere((e) => e.toString() == theme,orElse: ()=> null);
   }
 
   String toString() {
