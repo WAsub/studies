@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'theme/dynamic_theme.dart';
 import 'package:tag_memo/reorderableGridView.dart';
+import 'package:tag_memo/husenContainer.dart';
 
 void main() {
   runApp(MyApp());
@@ -13,7 +14,9 @@ class MyApp extends StatelessWidget {
       themedWidgetBuilder: (context, theme) {
         return MaterialApp(
           theme: theme,
-          home: TagMemo(title: "付箋メモ",),
+          home: TagMemo(
+            title: "付箋メモ",
+          ),
         );
       },
     );
@@ -28,23 +31,20 @@ class TagMemo extends StatefulWidget {
 }
 
 class _TagMemoState extends State<TagMemo> {
-
-  List<Widget> lists= [];
+  List<Widget> lists = [];
   double deviceHeight;
   double screenHeight;
   double screenWidth;
-  double gv; 
+  double gv;
   @override
   void initState() {
-    for(int j = 0; j < 10; j++){
-      lists.add(
-        Container(
-                color: Colors.redAccent[100],
-                child: Text(
-                  'Item '+ j.toString(),
-                ),
-              )
-      );
+    for (int j = 0; j < 10; j++) {
+      lists.add(Container(
+        color: Colors.redAccent[100],
+        child: Text(
+          'Item ' + j.toString(),
+        ),
+      ));
     }
     super.initState();
   }
@@ -54,26 +54,26 @@ class _TagMemoState extends State<TagMemo> {
     final Size size = MediaQuery.of(context).size;
     deviceHeight = size.height;
 
-    
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
       ),
       body: LayoutBuilder(builder: (context, constraints) {
-            screenHeight = constraints.maxHeight;
-            screenWidth = constraints.maxWidth;
-            gv = screenWidth/3;
-          // print(lists);
-          return ReorderableGridView(
-            crossAxisCount: 3,
-            crossAxisSpacing: 4.0,
-            mainAxisSpacing: 4.0,
-            children: lists,
-          );
-        
+        screenHeight = constraints.maxHeight;
+        screenWidth = constraints.maxWidth;
+        gv = screenWidth / 3;
+        // print(lists);
+        // return ReorderableGridView(
+        //   crossAxisCount: 3,
+        //   crossAxisSpacing: 4.0,
+        //   mainAxisSpacing: 4.0,
+        //   children: lists,
+        // );
+        return Container(
+          color: Colors.green[100],
+          child: HusenContainer(),
+        );
       }),
-      
-      
     );
   }
 }
