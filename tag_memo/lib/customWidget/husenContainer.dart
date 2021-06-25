@@ -1,4 +1,24 @@
 import 'package:flutter/material.dart';
+
+class HusenColor {
+  Color color;
+  Color backSideColor;
+
+  HusenColor({this.color, this.backSideColor,});
+
+  Map<String, dynamic> toMap() {
+    return {
+      'color': color,
+      'backSideColor': backSideColor,
+    };
+  }
+  @override
+  String toString() {
+    return 'Thokin{color: $color, backSideColor: $backSideColor,}';
+  }
+}
+
+
 class HusenContainer extends StatelessWidget {
   bool mekuriFlg;
   double height;

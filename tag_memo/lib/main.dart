@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'theme/dynamic_theme.dart';
-import 'package:tag_memo/reorderableGridView.dart';
-import 'package:tag_memo/husenContainer.dart';
+import 'package:tag_memo/customWidget/reorderableGridView.dart';
 
 void main() {
   runApp(MyApp());
@@ -33,9 +32,7 @@ class TagMemo extends StatefulWidget {
 class _TagMemoState extends State<TagMemo> {
   List<Widget> lists = [];
   double deviceHeight;
-  double screenHeight;
-  double screenWidth;
-  double gv;
+  double deviceWidth;
   @override
   void initState() {
     for (int j = 0; j < 10; j++) {
@@ -49,29 +46,30 @@ class _TagMemoState extends State<TagMemo> {
 
   @override
   Widget build(BuildContext context) {
-    final Size size = MediaQuery.of(context).size;
-    deviceHeight = size.height;
-
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
       ),
+
       body: LayoutBuilder(builder: (context, constraints) {
-        screenHeight = constraints.maxHeight;
-        screenWidth = constraints.maxWidth;
-        gv = screenWidth / 3;
-        // print(lists);
+        deviceHeight = constraints.maxHeight;
+        deviceWidth = constraints.maxWidth;
+
         return ReorderableGridView(
           crossAxisCount: 3,
           crossAxisSpacing: 4.0,
           mainAxisSpacing: 4.0,
-          children: lists,
+          children: List.generate(10, (index) {
+            return Container(alignment: Alignment.center,child: Text("item${index}"));
+          }),
         );
-        // return Container(
-        //   // color: Colors.green[100],
-        //   child: HusenContainer(),
-        // );
       }),
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.add),
+        onPressed: (){
+          
+        },
+      ),
     );
   }
 }

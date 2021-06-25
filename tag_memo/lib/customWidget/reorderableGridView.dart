@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:tag_memo/husenContainer.dart';
+import 'package:tag_memo/customWidget/husenContainer.dart';
 import "dart:async";
+
+
 class ReorderableGridView extends StatefulWidget {
   int crossAxisCount = 3;
   double crossAxisSpacing = 4.0;
   double mainAxisSpacing = 4.0;
   List<Widget> children = [];
+  List<HusenColor> childrenColor = [];
 
   ReorderableGridView({
     Key key,
@@ -28,15 +31,22 @@ class ReorderableGridViewState extends State<ReorderableGridView> {
 
   @override
   Widget build(BuildContext context) {
+    item = widget.children;
+    if(widget.childrenColor == null){
+      widget.childrenColor = List.generate(item.length, (index) {
+        return HusenColor(color: Colors.blueAccent[100], backSideColor: Colors.blue);
+      });
+    }
     return LayoutBuilder(builder: (context, constraints) {
       wigetWidth = constraints.maxWidth;
       gredSize = wigetWidth / 3;
 
-      item = widget.children;
+      
       for(int i = 0; i < item.length; i++){
         mekuriflgs.add(false);
         nonflgs.add(false);
       }
+      
 
       return GridView.count(
         crossAxisCount: widget.crossAxisCount, // 1行の要素数
@@ -109,6 +119,7 @@ class ReorderableGridViewState extends State<ReorderableGridView> {
       return null;
     }else{
       return HusenContainer(
+        
         mekuriFlg: mekuriflgs,
         child: item,
       );
