@@ -39,12 +39,10 @@ class _TagMemoState extends State<TagMemo> {
   @override
   void initState() {
     for (int j = 0; j < 10; j++) {
-      lists.add(Container(
-        color: Colors.redAccent[100],
-        child: Text(
-          'Item ' + j.toString(),
-        ),
-      ));
+      lists.add(
+        // Text("item${j}")
+        Container(alignment: Alignment.center,child: Text("item${j}"),)
+        );
     }
     super.initState();
   }
@@ -63,16 +61,16 @@ class _TagMemoState extends State<TagMemo> {
         screenWidth = constraints.maxWidth;
         gv = screenWidth / 3;
         // print(lists);
-        // return ReorderableGridView(
-        //   crossAxisCount: 3,
-        //   crossAxisSpacing: 4.0,
-        //   mainAxisSpacing: 4.0,
-        //   children: lists,
-        // );
-        return Container(
-          color: Colors.green[100],
-          child: HusenContainer(),
+        return ReorderableGridView(
+          crossAxisCount: 3,
+          crossAxisSpacing: 4.0,
+          mainAxisSpacing: 4.0,
+          children: lists,
         );
+        // return Container(
+        //   // color: Colors.green[100],
+        //   child: HusenContainer(),
+        // );
       }),
     );
   }

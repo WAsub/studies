@@ -1,135 +1,83 @@
 import 'package:flutter/material.dart';
-
-import 'dart:math' as math;
-
-class HusenContainer extends StatefulWidget {
-  int crossAxisCount = 3;
-  double crossAxisSpacing = 4.0;
-  double mainAxisSpacing = 4.0;
-  List<Widget> children = [];
-
-  HusenContainer({
-    Key key,
-    this.crossAxisCount,
-    this.crossAxisSpacing,
-    this.mainAxisSpacing,
-    this.children,
-  }) : super(key: key);
-
-  @override
-  HusenContainerState createState() => HusenContainerState();
-}
-
-class HusenContainerState extends State<HusenContainer> {
-  double wigetWidth;
-  double gredSize;
-  List<Widget> item;
-  bool flg = true;
-
+class HusenContainer extends StatelessWidget {
+  bool mekuriFlg;
+  double height;
+  double width;
+  Widget child;
+  Color color;
+  Color backSideColor;
+  HusenContainer({ 
+    this.mekuriFlg,
+    this.height,
+    this.width,
+    this.child,
+    this.color,
+    this.backSideColor,
+  });
   @override
   Widget build(BuildContext context) {
+    mekuriFlg = mekuriFlg == null ? true : mekuriFlg;
+    if(height == null){ height = 300;}
+    if(width == null){ width = 300;}
+    if(color == null){ color = Colors.greenAccent;}
+    if(backSideColor == null){ backSideColor = Colors.green;}
+
     return CustomPaint(
-      size: Size(300, 300),
-      painter: HusenPainter(),
+      child: this.child,
+      size: Size(width, height),
+      painter: HusenPainter(
+        mekuriFlg: this.mekuriFlg,
+        color: this.color,
+        backSideColor: this.backSideColor,
+      ),
     );
   }
 }
-
 class HusenPainter extends CustomPainter {
-  // // final double par;
-  // HusenPainter({
-  //   // this.par,
-  // });
+  bool mekuriFlg;
+  Color color;
+  Color backSideColor;
+  HusenPainter({ 
+    this.mekuriFlg,
+    this.color,
+    this.backSideColor,
+  });
+
   @override
   void paint(Canvas canvas, Size size) {
-    // final rect = Rect.fromLTRB(20, 20, 280, 280);
-    // final startAngle = -60 * math.pi / 180;
-    // final sweepAngle = 300 * math.pi / 180;
-    // final useCenter = false;
-    // final paint = Paint()
-    //   ..color = Colors.pinkAccent
-    //   ..style = PaintingStyle.stroke
-    //   ..strokeWidth = 28
-    //   ..strokeCap = StrokeCap.round;
-    // canvas.drawArc(rect, startAngle, sweepAngle, useCenter, paint);
-
-    // final paint2 = Paint()
-    //   ..color = Colors.purpleAccent
-    //   ..style = PaintingStyle.stroke
-    //   ..strokeWidth = 28
-    //   ..strokeCap = StrokeCap.round;
-    // final sweepAngle2 = 300 * math.pi / 180 * par;
-    // canvas.drawArc(rect, startAngle, sweepAngle2, useCenter, paint2);
-
-    var paint = Paint();
+    Paint paint = Paint();
+    paint.color = color;
     var path = Path();
-    paint.color = Colors.greenAccent;
-    // var rect = Rect.fromLTWH(0, 0, size.width, size.height);
-    // canvas.drawRect(rect, paint);
 
     path.lineTo(size.width, 0);
     path.lineTo(size.width, size.height / 6 * 5);
-    // path.lineTo(size.width / 6 * 5, size.height / 6 * 5);
     path.lineTo(size.width / 6 * 5, size.height);
     path.lineTo(0, size.height);
     path.lineTo(0, 0);
     canvas.drawPath(path, paint);
 
-    var paint5 = new Paint();
-    var path5 = new Path();
-    paint5.color = Colors.green;
-    path5.moveTo(size.width / 6 * 5, size.height / 6 * 5);
-    path5.lineTo(size.width, size.height / 6 * 5);
-    path5.lineTo(size.width / 6 * 5, size.height);
-    path5.lineTo(size.width / 6 * 5, size.height / 6 * 5);
-    canvas.drawPath(path5, paint5);
+    if(mekuriFlg){
+      paint = new Paint();
+      paint.color = backSideColor;
+      path = new Path();
 
-    // 四角（外線）
-    var paint2 = new Paint()
-      ..color = Colors.green
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
+      path.moveTo(size.width / 6 * 5, size.height / 6 * 5);
+      path.lineTo(size.width, size.height / 6 * 5);
+      path.lineTo(size.width / 6 * 5, size.height);
+      path.lineTo(size.width / 6 * 5, size.height / 6 * 5);
+      canvas.drawPath(path, paint);
+    }else{
+      paint = new Paint();
+      paint.color = color;
+      path = new Path();
 
-    // path.quadraticBezierTo();
-    // path.moveTo(size.width / 3, size.height / 3);
-    // path.lineTo(size.width / 3 * 2, size.height / 3);
-    // path.lineTo(size.width / 3 * 2, size.height / 3 * 2);
-    // path.lineTo(size.width / 3, size.height / 3 * 2);
-    // path.close();
-    // canvas.drawPath(path, paint);
-
-    // var rect2 = Rect.fromLTWH(size.width / 3 * 1, size.height / 3 * 1, size.width / 3 * 2, size.height / 3 * 2);
-    // final startAngle = -1 * math.pi / 180;
-    // final sweepAngle = math.pi / 180 * 91;
-    // canvas.drawArc(rect2, startAngle, sweepAngle, true, paint);
-
-    // var rect3 = Rect.fromLTWH(size.width / 3 * 1.5, size.height / 3 * 2, size.width / 3, size.height / 3);
-    // final startAngle3 = math.pi / 180;
-    // final sweepAngle3 = math.pi / 180 * 90;
-    // canvas.drawArc(rect3, startAngle3, sweepAngle3, false, paint2);
-    // var rect4 = Rect.fromLTWH(size.width / 3 * 2, size.height / 3 * 1.5, size.width / 3, size.height / 3);
-    // final startAngle4 = math.pi / 180;
-    // final sweepAngle4 = math.pi / 180 * 90;
-    // canvas.drawArc(rect4, startAngle4, sweepAngle4, false, paint2);
-
-    // var paint3 = new Paint()
-    //   ..color = Colors.orange
-    //   ..strokeCap = StrokeCap.round
-    //   ..style = PaintingStyle.stroke
-    //   ..strokeWidth = 2;
-    // paint3 = new Paint()..color = Colors.deepPurpleAccent;
-    // var path3 = Path();
-    // path3.moveTo(0, 0);
-    // path3.lineTo(0, size.height);
-    // path3.lineTo(size.width / 3, size.height);
-    // path3.quadraticBezierTo(size.width / 10 * 6, size.height / 10 * 10, size.width / 10 * 9.75, size.height / 10 * 9.25);
-    // path3.quadraticBezierTo(size.width / 10 * 10, size.height / 10 * 6.5, size.width, size.height / 2);
-    // path3.lineTo(size.width, 0);
-    // path3.lineTo(0, 0);
-    // canvas.drawPath(path3, paint3);
+      path.moveTo(size.width, size.height);
+      path.lineTo(size.width, size.height / 6 * 5);
+      path.lineTo(size.width / 6 * 5, size.height);
+      path.lineTo(size.width, size.height);
+      canvas.drawPath(path, paint);
+    }
   }
-
   @override
   bool shouldRepaint(CustomPainter oldDelegate) => true;
 }
