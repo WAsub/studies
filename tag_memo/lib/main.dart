@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tag_memo/customWidget/reorderableGridView2.dart';
 import 'theme/dynamic_theme.dart';
 import 'package:tag_memo/customWidget/reorderableGridView.dart';
 
@@ -55,6 +56,14 @@ class _TagMemoState extends State<TagMemo> {
         deviceHeight = constraints.maxHeight;
         deviceWidth = constraints.maxWidth;
 
+        return ReorderableGridView2(
+          crossAxisCount: 3,
+          crossAxisSpacing: 4.0,
+          mainAxisSpacing: 4.0,
+          children: List.generate(10, (index) {
+            return Container(alignment: Alignment.center, color: Colors.amberAccent,child: Text("item${index}"));
+          }),
+        );
         return ReorderableGridView(
           crossAxisCount: 3,
           crossAxisSpacing: 4.0,

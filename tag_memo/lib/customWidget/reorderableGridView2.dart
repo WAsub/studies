@@ -3,14 +3,14 @@ import 'package:tag_memo/customWidget/husenContainer.dart';
 import "dart:async";
 
 
-class ReorderableGridView extends StatefulWidget {
+class ReorderableGridView2 extends StatefulWidget {
   int crossAxisCount = 3;
   double crossAxisSpacing = 4.0;
   double mainAxisSpacing = 4.0;
   List<Widget> children = [];
   List<HusenColor> childrenColor = [];
 
-  ReorderableGridView({
+  ReorderableGridView2({
     Key key,
     this.crossAxisCount,
     this.crossAxisSpacing,
@@ -19,9 +19,9 @@ class ReorderableGridView extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  ReorderableGridViewState createState() => ReorderableGridViewState();
+  ReorderableGridView2State createState() => ReorderableGridView2State();
 }
-class ReorderableGridViewState extends State<ReorderableGridView> {
+class ReorderableGridView2State extends State<ReorderableGridView2> {
   double wigetWidth;
   double gredSize;
   List<Widget> item;
@@ -48,7 +48,76 @@ class ReorderableGridViewState extends State<ReorderableGridView> {
         mekuriflgs.add(false);
         nonflgs.add(false);
       }
-      
+      return Stack(
+        children: List.generate(10, (index) {
+          double top = (index ~/ widget.crossAxisCount * gredSize) as double;
+          double left = (index % widget.crossAxisCount * gredSize) as double;
+          return Positioned(
+            top: top,
+            left: left,
+            child:GestureDetector(
+              // 長押しした時の処理
+              onLongPress: () {
+                /** 空のアイテムの時は後の入れ替え処理をしないようにする */
+                if (item[index] == null) {
+                  setState(() {
+                    flg = false;
+                  });
+                }
+                /** 付箋をめくる */
+                setState(() {
+                  mekuriflgs[index] = true;
+                });
+              },
+              // 長押しドラッグで指を離した時の処理
+              onLongPressEnd: (LongPressEndDetails details) async {
+                /** アイテムが空じゃなかったら入れ替え */
+                if (flg) {
+                  /** スタート時からの差分 */
+                  double dx = details.localPosition.dx;
+                  double dy = details.localPosition.dy;
+                  /** なんかマイナスの時は+gredSizeされるっぽいので補正 */
+                  dx -= dx < 0 ? gredSize : 0;
+                  dy -= dy < 0 ? gredSize : 0;
+                  /** 移動先index算出 */
+                  int moved = 3 * (dy ~/ gredSize) + (dx ~/ gredSize); //差分
+                  moved += index; // 移動先index
+                  setState(() {
+                    /** アイテム配列サイズを超えるならnullを入れて拡張 */
+                    if (moved > item.length - 1) {
+                      for (int i = item.length - 1; i < moved; i++) {
+                        item.add(null);
+                        mekuriflgs.add(false);
+                        nonflgs.add(true);
+                      }
+                    }
+                    /** 入れ替え */
+                    var a = item[moved];
+                    item[moved] = item[index];
+                    item[index] = a;
+                    /** 入れ替える前のところはめくりを戻し、入れ替え先をめくる */
+                    mekuriflgs[index] = false;
+                    mekuriflgs[moved] = true;
+                    /** 末尾の余計なnullを削除 */
+                    item = endNullDelete(item);
+                  });
+                  /** 一瞬待ってから入れ替え先のめくりを戻す */
+                  await new Future.delayed(new Duration(milliseconds: 150));
+                  setState(() {
+                    mekuriflgs[moved] = false;
+                  });
+                }
+              },
+              /** 空白をnullにするためにメソッドを経由する */
+              child: Container(
+                width: gredSize - widget.crossAxisSpacing,
+                height: gredSize - widget.mainAxisSpacing,
+                child: widget.children[index]
+              ),
+            )
+          );
+        })
+      );
 
       return GridView.count(
         crossAxisCount: widget.crossAxisCount, // 1行の要素数
