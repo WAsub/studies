@@ -58,20 +58,19 @@ class _TagMemoState extends State<TagMemo> {
 
         return ReorderableGridView2(
           crossAxisCount: 3,
-          crossAxisSpacing: 4.0,
-          mainAxisSpacing: 4.0,
+          AxisSpacing: 4.0,
           children: List.generate(10, (index) {
             return Container(alignment: Alignment.center, color: Colors.amberAccent,child: Text("item${index}"));
           }),
         );
-        return ReorderableGridView(
-          crossAxisCount: 3,
-          crossAxisSpacing: 4.0,
-          mainAxisSpacing: 4.0,
-          children: List.generate(10, (index) {
-            return Container(alignment: Alignment.center,child: Text("item${index}"));
-          }),
-        );
+        // return ReorderableGridView(
+        //   crossAxisCount: 3,
+        //   crossAxisSpacing: 4.0,
+        //   mainAxisSpacing: 4.0,
+        //   children: List.generate(10, (index) {
+        //     return Container(alignment: Alignment.center,child: Text("item${index}"));
+        //   }),
+        // );
       }),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),

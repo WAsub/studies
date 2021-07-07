@@ -5,16 +5,14 @@ import "dart:async";
 
 class ReorderableGridView2 extends StatefulWidget {
   int crossAxisCount = 3;
-  double crossAxisSpacing = 4.0;
-  double mainAxisSpacing = 4.0;
+  double AxisSpacing = 4.0;
   List<Widget> children = [];
   List<HusenColor> childrenColor = [];
 
   ReorderableGridView2({
     Key key,
     this.crossAxisCount,
-    this.crossAxisSpacing,
-    this.mainAxisSpacing,
+    this.AxisSpacing,
     this.children,
   }) : super(key: key);
 
@@ -28,8 +26,10 @@ class ReorderableGridView2State extends State<ReorderableGridView2> {
   bool flg = true;
   List<bool> mekuriflgs = [];
   List<bool> nonflgs = [];
-  double top = 0;
-  double btm = 0;
+  List<double> tops = [];
+  List<double> lefts = [];
+  final _streamController = StreamController();
+  // double btm = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -39,151 +39,58 @@ class ReorderableGridView2State extends State<ReorderableGridView2> {
         return HusenColor(color: Colors.blueAccent[100], backSideColor: Colors.blue);
       });
     }
+    
     return LayoutBuilder(builder: (context, constraints) {
       wigetWidth = constraints.maxWidth;
-      gredSize = wigetWidth / 3;
+      gredSize = (wigetWidth - widget.AxisSpacing * (widget.crossAxisCount - 1)) / 3;
+    for(int index = 0; index < widget.children.length; index++){
+      // var a = (index ~/ widget.crossAxisCount) * gredSize;
+      tops.add((index ~/ widget.crossAxisCount * gredSize) + index ~/ widget.crossAxisCount * widget.AxisSpacing);
+      lefts.add((index % widget.crossAxisCount * gredSize) + index % widget.crossAxisCount * widget.AxisSpacing);
+      // tops[index] = (index ~/ widget.crossAxisCount * gredSize) + index ~/ widget.crossAxisCount * widget.AxisSpacing;
+      // lefts[index] = (index % widget.crossAxisCount * gredSize) + index % widget.crossAxisCount * widget.AxisSpacing;
+    }
+    _streamController.sink.add([widget.children, tops, lefts]);
 
-      
-      for(int i = 0; i < item.length; i++){
-        mekuriflgs.add(false);
-        nonflgs.add(false);
-      }
-      return Stack(
-        children: List.generate(10, (index) {
-          double top = (index ~/ widget.crossAxisCount * gredSize) as double;
-          double left = (index % widget.crossAxisCount * gredSize) as double;
-          return Positioned(
-            top: top,
-            left: left,
-            child:GestureDetector(
-              // 長押しした時の処理
-              onLongPress: () {
-                /** 空のアイテムの時は後の入れ替え処理をしないようにする */
-                if (item[index] == null) {
-                  setState(() {
-                    flg = false;
-                  });
-                }
-                /** 付箋をめくる */
-                setState(() {
-                  mekuriflgs[index] = true;
-                });
-              },
-              // 長押しドラッグで指を離した時の処理
-              onLongPressEnd: (LongPressEndDetails details) async {
-                /** アイテムが空じゃなかったら入れ替え */
-                if (flg) {
-                  /** スタート時からの差分 */
-                  double dx = details.localPosition.dx;
-                  double dy = details.localPosition.dy;
-                  /** なんかマイナスの時は+gredSizeされるっぽいので補正 */
-                  dx -= dx < 0 ? gredSize : 0;
-                  dy -= dy < 0 ? gredSize : 0;
-                  /** 移動先index算出 */
-                  int moved = 3 * (dy ~/ gredSize) + (dx ~/ gredSize); //差分
-                  moved += index; // 移動先index
-                  setState(() {
-                    /** アイテム配列サイズを超えるならnullを入れて拡張 */
-                    if (moved > item.length - 1) {
-                      for (int i = item.length - 1; i < moved; i++) {
-                        item.add(null);
-                        mekuriflgs.add(false);
-                        nonflgs.add(true);
-                      }
-                    }
-                    /** 入れ替え */
-                    var a = item[moved];
-                    item[moved] = item[index];
-                    item[index] = a;
-                    /** 入れ替える前のところはめくりを戻し、入れ替え先をめくる */
-                    mekuriflgs[index] = false;
-                    mekuriflgs[moved] = true;
-                    /** 末尾の余計なnullを削除 */
-                    item = endNullDelete(item);
-                  });
-                  /** 一瞬待ってから入れ替え先のめくりを戻す */
-                  await new Future.delayed(new Duration(milliseconds: 150));
-                  setState(() {
-                    mekuriflgs[moved] = false;
-                  });
-                }
-              },
-              /** 空白をnullにするためにメソッドを経由する */
-              child: Container(
-                width: gredSize - widget.crossAxisSpacing,
-                height: gredSize - widget.mainAxisSpacing,
-                child: widget.children[index]
-              ),
-            )
-          );
-        })
-      );
 
-      return GridView.count(
-        crossAxisCount: widget.crossAxisCount, // 1行の要素数
-        crossAxisSpacing: widget.crossAxisSpacing, // 縦スペース
-        mainAxisSpacing: widget.mainAxisSpacing, // 横スペース
-        children: List.generate(item.length, (index) {
-          return GestureDetector(
-            // 長押しした時の処理
-            onLongPress: () {
-              /** 空のアイテムの時は後の入れ替え処理をしないようにする */
-              if (item[index] == null) {
-                setState(() {
-                  flg = false;
-                });
-              }
-              /** 付箋をめくる */
-              setState(() {
-                mekuriflgs[index] = true;
-              });
-            },
-            // 長押しドラッグで指を離した時の処理
-            onLongPressEnd: (LongPressEndDetails details) async {
-              /** アイテムが空じゃなかったら入れ替え */
-              if (flg) {
-                /** スタート時からの差分 */
-                double dx = details.localPosition.dx;
-                double dy = details.localPosition.dy;
-                /** なんかマイナスの時は+gredSizeされるっぽいので補正 */
-                dx -= dx < 0 ? gredSize : 0;
-                dy -= dy < 0 ? gredSize : 0;
-                /** 移動先index算出 */
-                int moved = 3 * (dy ~/ gredSize) + (dx ~/ gredSize); //差分
-                moved += index; // 移動先index
-                setState(() {
-                  /** アイテム配列サイズを超えるならnullを入れて拡張 */
-                  if (moved > item.length - 1) {
-                    for (int i = item.length - 1; i < moved; i++) {
-                      item.add(null);
-                      mekuriflgs.add(false);
-                      nonflgs.add(true);
-                    }
-                  }
-                  /** 入れ替え */
-                  var a = item[moved];
-                  item[moved] = item[index];
-                  item[index] = a;
-                  /** 入れ替える前のところはめくりを戻し、入れ替え先をめくる */
-                  mekuriflgs[index] = false;
-                  mekuriflgs[moved] = true;
-                  /** 末尾の余計なnullを削除 */
-                  item = endNullDelete(item);
-                });
-                /** 一瞬待ってから入れ替え先のめくりを戻す */
-                await new Future.delayed(new Duration(milliseconds: 150));
-                setState(() {
-                  mekuriflgs[moved] = false;
-                });
-              }
-            },
-            /** 空白をnullにするためにメソッドを経由する */
-            child: husenOrNull(item[index],mekuriflgs[index]),
-          );
-        }),
-      );
+      return StreamBuilder(
+          // 指定したstreamにデータが流れてくると再描画される
+          stream: _streamController.stream,
+          builder: (BuildContext context, AsyncSnapshot snapShot) {
+            if(snapShot.hasData){
+              return Stack(
+                  children: List.generate(snapShot.data[0].length, (index) {
+                    
+                    return Positioned(
+                        top: snapShot.data[1][index],
+                        left: snapShot.data[2][index],
+                        child:GestureDetector(
+                          // 長押しした時の処理
+                          onLongPress: () {
+                            print("Long");
+                          },
+                          onLongPressMoveUpdate: (LongPressMoveUpdateDetails details){
+                            print(details.globalPosition.dy);
+                            tops[index] = details.globalPosition.dy;
+                            _streamController.sink.add([widget.children, tops, lefts]);
+                          },
+                          /** 空白をnullにするためにメソッドを経由する */
+                          child: Container(
+                            width: gredSize,
+                            height: gredSize,
+                            child: snapShot.data[0][index]
+                          ),
+                        )
+                    );
+                  })
+              );
+            }else{
+              return Container();
+            }
+          });
     });
   }
+
 
   dynamic husenOrNull(Widget item, bool mekuriflgs){
     if(item == null){
