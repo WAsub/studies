@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:tag_memo/customWidget/husenContainer.dart';
 import "dart:async";
 
-
 class ReorderableGridView2 extends StatefulWidget {
   int crossAxisCount = 3;
   double AxisSpacing = 4.0;
@@ -20,90 +19,128 @@ class ReorderableGridView2 extends StatefulWidget {
   ReorderableGridView2State createState() => ReorderableGridView2State();
 }
 class ReorderableGridView2State extends State<ReorderableGridView2> {
-  double wigetWidth;
+  /** グリッドビューの高さ */
+  double wigetHeight;
+  /** グリッドアイテムの大きさ */
   double gredSize;
-  List<Widget> item;
+  /** アイテムのPosition */
+  List<Offset> fixedPosition = [];
+  /** previewに必要なあれこれ */
   bool flg = true;
-  List<bool> mekuriflgs = [];
-  List<bool> nonflgs = [];
-  List<double> tops = [];
-  List<double> lefts = [];
-  final _streamController = StreamController();
-  // double btm = 0;
+  Offset startPosition = Offset(0.0,0.0);
+  double top = 0;
+  double left = 0;
+  Color previewItemColor = Colors.transparent;
 
   @override
   Widget build(BuildContext context) {
-    item = widget.children;
-    if(widget.childrenColor == null){
-      widget.childrenColor = List.generate(item.length, (index) {
-        return HusenColor(color: Colors.blueAccent[100], backSideColor: Colors.blue);
-      });
-    }
-    
     return LayoutBuilder(builder: (context, constraints) {
-      wigetWidth = constraints.maxWidth;
-      gredSize = (wigetWidth - widget.AxisSpacing * (widget.crossAxisCount - 1)) / 3;
-    for(int index = 0; index < widget.children.length; index++){
-      // var a = (index ~/ widget.crossAxisCount) * gredSize;
-      tops.add((index ~/ widget.crossAxisCount * gredSize) + index ~/ widget.crossAxisCount * widget.AxisSpacing);
-      lefts.add((index % widget.crossAxisCount * gredSize) + index % widget.crossAxisCount * widget.AxisSpacing);
-      // tops[index] = (index ~/ widget.crossAxisCount * gredSize) + index ~/ widget.crossAxisCount * widget.AxisSpacing;
-      // lefts[index] = (index % widget.crossAxisCount * gredSize) + index % widget.crossAxisCount * widget.AxisSpacing;
-    }
-    _streamController.sink.add([widget.children, tops, lefts]);
-
-
-      return StreamBuilder(
-          // 指定したstreamにデータが流れてくると再描画される
-          stream: _streamController.stream,
-          builder: (BuildContext context, AsyncSnapshot snapShot) {
-            if(snapShot.hasData){
-              return Stack(
-                  children: List.generate(snapShot.data[0].length, (index) {
-                    
-                    return Positioned(
-                        top: snapShot.data[1][index],
-                        left: snapShot.data[2][index],
-                        child:GestureDetector(
-                          // 長押しした時の処理
-                          onLongPress: () {
-                            print("Long");
-                          },
-                          onLongPressMoveUpdate: (LongPressMoveUpdateDetails details){
-                            print(details.globalPosition.dy);
-                            tops[index] = details.globalPosition.dy;
-                            _streamController.sink.add([widget.children, tops, lefts]);
-                          },
-                          /** 空白をnullにするためにメソッドを経由する */
-                          child: Container(
-                            width: gredSize,
-                            height: gredSize,
-                            child: snapShot.data[0][index]
-                          ),
-                        )
-                    );
-                  })
+      gredSize = (constraints.maxWidth - widget.AxisSpacing * (widget.crossAxisCount - 1)) / 3;
+      /** 余裕をもってスクロールできるように設定 */
+      wigetHeight = ((widget.children.length ~/ widget.crossAxisCount * gredSize) + widget.children.length ~/ widget.crossAxisCount * widget.AxisSpacing) + gredSize*2;
+      /** 各アイテムのPositionを設定
+       ** SetState時に入れ替えが起こるとうまく動かないので増分だけ追加  */
+      if(fixedPosition.length < widget.children.length){
+        for(int index = 0; index < widget.children.length; index++){
+          fixedPosition.add(Offset(
+            (index % widget.crossAxisCount * gredSize) + index % widget.crossAxisCount * widget.AxisSpacing,
+            (index ~/ widget.crossAxisCount * gredSize) + index ~/ widget.crossAxisCount * widget.AxisSpacing
+          ));
+        }
+      }
+      /** グリッドビュー */
+      return SingleChildScrollView(
+        child: Container(
+          height: wigetHeight,
+          /** プレビュー用アイテムが一番上にするためStackを二重にする */
+          child: Stack(children: [
+            /** アイテム */
+            Stack(children: List.generate(widget.children.length, (index) {
+              return Positioned(
+                top: fixedPosition[index].dy,
+                left: fixedPosition[index].dx,
+                child:GestureDetector(
+                  onLongPress: () {
+                    /** 空のアイテムの時は後の入れ替え処理をしないようにする */
+                    if (widget.children[index] == null) {
+                      setState(() => flg = false);
+                    }
+                  },
+                  onLongPressStart: (LongPressStartDetails details){
+                    setState(() {
+                      startPosition = details.localPosition;
+                      top = fixedPosition[index].dy + details.localPosition.dy - startPosition.dy;
+                      left = fixedPosition[index].dx + details.localPosition.dx - startPosition.dx;
+                      previewItemColor = Colors.black.withOpacity(0.5);
+                    });
+                  },
+                  onLongPressMoveUpdate: (LongPressMoveUpdateDetails details){
+                    setState(() {
+                      top = fixedPosition[index].dy + details.localPosition.dy - startPosition.dy;
+                      left = fixedPosition[index].dx + details.localPosition.dx - startPosition.dx;
+                    });
+                  },
+                  onLongPressEnd: (LongPressEndDetails details) async {
+                    /** アイテムが空じゃなかったら入れ替え */
+                    if (flg) {
+                      /** スタート時からの差分 */
+                      double dx = details.localPosition.dx;
+                      double dy = details.localPosition.dy;
+                      /** なんかマイナスの時は+gredSizeされるっぽいので補正 */
+                      dx -= dx < 0 ? gredSize : 0;
+                      dy -= dy < 0 ? gredSize : 0;
+                      /** 移動先index算出 */
+                      int moved = 3 * (dy ~/ gredSize) + (dx ~/ gredSize); //差分
+                      moved += index; // 移動先index
+                      setState(() {
+                        previewItemColor = Colors.transparent;
+                        /** アイテム配列サイズを超えるならnullを入れて拡張 */
+                        if (moved >= widget.children.length) {
+                          for (int i = widget.children.length; i <= moved; i++) {
+                            widget.children.add(null);
+                            fixedPosition = listAddAt(fixedPosition, i, (i ~/ widget.crossAxisCount * gredSize) + i ~/ widget.crossAxisCount * widget.AxisSpacing);
+                            fixedPosition = listAddAt(fixedPosition, i, (i % widget.crossAxisCount * gredSize) + i % widget.crossAxisCount * widget.AxisSpacing);
+                          }
+                        }
+                        /** 入れ替え */
+                        var a = widget.children[moved];
+                        widget.children[moved] = widget.children[index];
+                        widget.children[index] = a;
+                        widget.children = endNullDelete(widget.children);
+                      });
+                    }
+                  },
+                  /**  */
+                  child: Container(
+                    width: gredSize,
+                    height: gredSize,
+                    child: widget.children[index]
+                  ),
+                )
               );
-            }else{
-              return Container();
-            }
-          });
+            }),),
+            /** プレビュー用アイテム */
+            Positioned(
+              top: top,
+              left: left,
+              child: Container(color:previewItemColor,height: gredSize,width: gredSize,),
+            ),
+          ]),
+        )
+      );
     });
   }
 
-
-  dynamic husenOrNull(Widget item, bool mekuriflgs){
-    if(item == null){
-      return null;
-    }else{
-      return HusenContainer(
-        
-        mekuriFlg: mekuriflgs,
-        child: item,
-      );
+  List<dynamic> listAddAt(List<dynamic> list, int index, dynamic item){
+    /** アイテム配列サイズを超えるならnullを入れて拡張 */
+    if (index >= list.length) {
+      for (int i = list.length; i <= index; i++) {
+        list.add(null);
+      }
     }
+    list[index] = item;
+    return list;
   }
-
   List<dynamic> endNullDelete(List<dynamic> list) {
     /** 末尾のnullを削除 */
     for (int i = list.length - 1; i >= 0; i--) {
@@ -111,12 +148,6 @@ class ReorderableGridView2State extends State<ReorderableGridView2> {
         break;
       }
       list.removeAt(i);
-    }
-    /** 3つ加える(下部に空きスペースを作るため) */
-    for (int i = 0; i < 3; i++) {
-      list.add(null);
-      mekuriflgs.add(false);
-      nonflgs.add(true);
     }
     return list;
   }
