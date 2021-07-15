@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tag_memo/customWidget/husenContainer.dart';
 import 'package:tag_memo/customWidget/reorderableGridView2.dart';
 import 'theme/dynamic_theme.dart';
 import 'package:tag_memo/customWidget/reorderableGridView.dart';
@@ -58,9 +59,9 @@ class _TagMemoState extends State<TagMemo> {
 
         return ReorderableGridView2(
           crossAxisCount: 3,
-          AxisSpacing: 4.0,
+          axisSpacing: 4.0,
           children: List.generate(10, (index) {
-            return Container(alignment: Alignment.center, color: Colors.amberAccent,child: Text("item${index}"));
+            return HusenContainer(child: Text("item${index}"));
           }),
         );
         // return ReorderableGridView(

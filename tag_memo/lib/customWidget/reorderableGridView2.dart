@@ -1,17 +1,17 @@
+import 'package:async/async.dart';
 import 'package:flutter/material.dart';
 import 'package:tag_memo/customWidget/husenContainer.dart';
 import "dart:async";
 
 class ReorderableGridView2 extends StatefulWidget {
   int crossAxisCount = 3;
-  double AxisSpacing = 4.0;
+  double axisSpacing = 4.0;
   List<Widget> children = [];
-  List<HusenColor> childrenColor = [];
 
   ReorderableGridView2({
     Key key,
     this.crossAxisCount,
-    this.AxisSpacing,
+    this.axisSpacing,
     this.children,
   }) : super(key: key);
 
@@ -19,6 +19,7 @@ class ReorderableGridView2 extends StatefulWidget {
   ReorderableGridView2State createState() => ReorderableGridView2State();
 }
 class ReorderableGridView2State extends State<ReorderableGridView2> {
+  final AsyncMemoizer memoizer = AsyncMemoizer();
   /** グリッドビューの高さ */
   double wigetHeight;
   /** グリッドアイテムの大きさ */
@@ -30,24 +31,28 @@ class ReorderableGridView2State extends State<ReorderableGridView2> {
   Offset startPosition = Offset(0.0,0.0);
   double top = 0;
   double left = 0;
-  Color previewItemColor = Colors.transparent;
+  Widget previewItem;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
-      gredSize = (constraints.maxWidth - widget.AxisSpacing * (widget.crossAxisCount - 1)) / 3;
+      gredSize = (constraints.maxWidth - widget.axisSpacing * (widget.crossAxisCount - 1)) / 3;
       /** 余裕をもってスクロールできるように設定 */
-      wigetHeight = ((widget.children.length ~/ widget.crossAxisCount * gredSize) + widget.children.length ~/ widget.crossAxisCount * widget.AxisSpacing) + gredSize*2;
-      /** 各アイテムのPositionを設定
-       ** SetState時に入れ替えが起こるとうまく動かないので増分だけ追加  */
-      if(fixedPosition.length < widget.children.length){
+      wigetHeight = ((widget.children.length ~/ widget.crossAxisCount * gredSize) + widget.children.length ~/ widget.crossAxisCount * widget.axisSpacing) + gredSize*2;
+      /** SetState時に再設定されるとおかしくなるので最初の一回だけ設定 */
+      memoizer.runOnce(() async {
+        /** プレビュー用アイテムを画面外に飛ばす */
+        top = -gredSize;
+        left = -gredSize;
+        /** 各アイテムのPositionを設定 */
         for(int index = 0; index < widget.children.length; index++){
           fixedPosition.add(Offset(
-            (index % widget.crossAxisCount * gredSize) + index % widget.crossAxisCount * widget.AxisSpacing,
-            (index ~/ widget.crossAxisCount * gredSize) + index ~/ widget.crossAxisCount * widget.AxisSpacing
+            (index % widget.crossAxisCount * gredSize) + index % widget.crossAxisCount * widget.axisSpacing,
+            (index ~/ widget.crossAxisCount * gredSize) + index ~/ widget.crossAxisCount * widget.axisSpacing
           ));
         }
-      }
+      });
+
       /** グリッドビュー */
       return SingleChildScrollView(
         child: Container(
@@ -62,16 +67,20 @@ class ReorderableGridView2State extends State<ReorderableGridView2> {
                 child:GestureDetector(
                   onLongPress: () {
                     /** 空のアイテムの時は後の入れ替え処理をしないようにする */
-                    if (widget.children[index] == null) {
+                    if (widget.children[index] == null)
                       setState(() => flg = false);
-                    }
                   },
                   onLongPressStart: (LongPressStartDetails details){
                     setState(() {
+                      /** 指の位置によってtopとleftを補正 */
                       startPosition = details.localPosition;
                       top = fixedPosition[index].dy + details.localPosition.dy - startPosition.dy;
                       left = fixedPosition[index].dx + details.localPosition.dx - startPosition.dx;
-                      previewItemColor = Colors.black.withOpacity(0.5);
+                      /** プレビュー用アイテムに移動するアイテムを入れて */
+                      previewItem = widget.children[index];
+                      /** 元の場所は見えないようにする
+                       ** なお、nullを入れるとonLongPressのところの判定に引っかかるのでContainerにしておく */
+                      widget.children[index] = Container();
                     });
                   },
                   onLongPressMoveUpdate: (LongPressMoveUpdateDetails details){
@@ -93,27 +102,30 @@ class ReorderableGridView2State extends State<ReorderableGridView2> {
                       int moved = 3 * (dy ~/ gredSize) + (dx ~/ gredSize); //差分
                       moved += index; // 移動先index
                       setState(() {
-                        previewItemColor = Colors.transparent;
                         /** アイテム配列サイズを超えるならnullを入れて拡張 */
                         if (moved >= widget.children.length) {
                           for (int i = widget.children.length; i <= moved; i++) {
-                            widget.children.add(null);
-                            fixedPosition = listAddAt(fixedPosition, i, (i ~/ widget.crossAxisCount * gredSize) + i ~/ widget.crossAxisCount * widget.AxisSpacing);
-                            fixedPosition = listAddAt(fixedPosition, i, (i % widget.crossAxisCount * gredSize) + i % widget.crossAxisCount * widget.AxisSpacing);
+                            widget.children = listAddAt(widget.children, i, null);
+                            fixedPosition = listAddAt(fixedPosition, i, Offset(
+                              (i % widget.crossAxisCount * gredSize) + i % widget.crossAxisCount * widget.axisSpacing,
+                              (i ~/ widget.crossAxisCount * gredSize) + i ~/ widget.crossAxisCount * widget.axisSpacing
+                            ));
                           }
                         }
                         /** 入れ替え */
-                        var a = widget.children[moved];
-                        widget.children[moved] = widget.children[index];
-                        widget.children[index] = a;
+                        widget.children[index] = widget.children[moved];
+                        widget.children[moved] = previewItem;
                         widget.children = endNullDelete(widget.children);
+                        /** プレビュー用アイテムを画面外に飛ばす */
+                        previewItem = null;
+                        top = -gredSize;
+                        left = -gredSize;
                       });
                     }
                   },
-                  /**  */
+                  /** アイテム */
                   child: Container(
-                    width: gredSize,
-                    height: gredSize,
+                    width: gredSize, height: gredSize,
                     child: widget.children[index]
                   ),
                 )
@@ -123,7 +135,19 @@ class ReorderableGridView2State extends State<ReorderableGridView2> {
             Positioned(
               top: top,
               left: left,
-              child: Container(color:previewItemColor,height: gredSize,width: gredSize,),
+              child: Container(
+                height: gredSize, width: gredSize,
+                decoration: BoxDecoration(
+                  boxShadow: previewItem == null ? null : 
+                    [BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 10.0,
+                      spreadRadius: 1.0,
+                      offset: Offset(5,5)
+                    )]
+                ),
+                child: previewItem
+              ),
             ),
           ]),
         )
