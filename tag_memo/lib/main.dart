@@ -35,13 +35,16 @@ class _TagMemoState extends State<TagMemo> {
   List<Widget> lists = [];
   double deviceHeight;
   double deviceWidth;
+  bool aaa = true;
   @override
   void initState() {
     for (int j = 0; j < 10; j++) {
       lists.add(
-        // Text("item${j}")
-        Container(alignment: Alignment.center,child: Text("item${j}"),)
-        );
+          // Text("item${j}")
+          Container(
+        alignment: Alignment.center,
+        child: Text("item${j}"),
+      ));
     }
     super.initState();
   }
@@ -52,7 +55,6 @@ class _TagMemoState extends State<TagMemo> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-
       body: LayoutBuilder(builder: (context, constraints) {
         deviceHeight = constraints.maxHeight;
         deviceWidth = constraints.maxWidth;
@@ -60,8 +62,18 @@ class _TagMemoState extends State<TagMemo> {
         return ReorderableGridView2(
           crossAxisCount: 3,
           axisSpacing: 4.0,
+          aaaa: () {
+            setState(() {
+              aaa = false;
+              print("aaa");
+            });
+            // return print("aaa");
+          },
           children: List.generate(10, (index) {
-            return HusenContainer(child: Text("item${index}"));
+            return Container(
+              color: Colors.transparent,
+              child: HusenContainer(mekuriFlg: aaa, child: Text("item${index}")),
+            );
           }),
         );
         // return ReorderableGridView(
@@ -75,9 +87,7 @@ class _TagMemoState extends State<TagMemo> {
       }),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
-        onPressed: (){
-          
-        },
+        onPressed: () {},
       ),
     );
   }

@@ -53,6 +53,7 @@ class HusenContainer extends StatelessWidget {
     );
   }
 }
+
 class HusenPainter extends CustomPainter {
   bool mekuriFlg;
   Color color;
