@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:tag_memo/customWidget/husenContainer.dart';
-import 'package:tag_memo/customWidget/reorderableGridView2.dart';
+import 'customWidget/reorderableHusenView.dart';
 import 'theme/dynamic_theme.dart';
-import 'package:tag_memo/customWidget/reorderableGridView.dart';
 
 void main() {
   runApp(MyApp());
@@ -59,31 +57,17 @@ class _TagMemoState extends State<TagMemo> {
         deviceHeight = constraints.maxHeight;
         deviceWidth = constraints.maxWidth;
 
-        return ReorderableGridView2(
-          crossAxisCount: 3,
-          axisSpacing: 4.0,
-          aaaa: () {
-            setState(() {
-              aaa = false;
-              print("aaa");
-            });
-            // return print("aaa");
-          },
+        return ReorderableHusenView(
+          crossAxisCount: 4,
+          axisSpacing: 6.0,
           children: List.generate(10, (index) {
-            return Container(
-              color: Colors.transparent,
-              child: HusenContainer(mekuriFlg: aaa, child: Text("item${index}")),
-            );
+            return Text("item${index}");
+            // return Container(
+            //   color: Colors.transparent,
+            //   child: HusenContainer(mekuriFlg: aaa, child: Text("item${index}")),
+            // );
           }),
         );
-        // return ReorderableGridView(
-        //   crossAxisCount: 3,
-        //   crossAxisSpacing: 4.0,
-        //   mainAxisSpacing: 4.0,
-        //   children: List.generate(10, (index) {
-        //     return Container(alignment: Alignment.center,child: Text("item${index}"));
-        //   }),
-        // );
       }),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
