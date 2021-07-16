@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:tag_memo/editingMemo.dart';
 import 'customWidget/reorderableHusenView.dart';
 import 'theme/dynamic_theme.dart';
 
-void main() {
+void main(){
+  WidgetsFlutterBinding.ensureInitialized();
+  //向き指定
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,//縦固定
+  ]);
+  //runApp
   runApp(MyApp());
 }
-
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -61,11 +68,21 @@ class _TagMemoState extends State<TagMemo> {
           crossAxisCount: 4,
           axisSpacing: 6.0,
           children: List.generate(10, (index) {
-            return Text("item${index}");
-            // return Container(
-            //   color: Colors.transparent,
-            //   child: HusenContainer(mekuriFlg: aaa, child: Text("item${index}")),
-            // );
+            // return Text("item${index}");
+            return GestureDetector(
+              onTap: (){
+                print("hello${index}");
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) {
+                    // メモ編集画面へ
+                    return EditingMemo();
+                  }),
+                ).then((value) async {
+                  
+                });
+              },
+              child: Text("item${index}"),
+            );
           }),
         );
       }),
