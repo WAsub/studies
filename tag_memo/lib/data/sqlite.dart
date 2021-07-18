@@ -5,12 +5,14 @@ import 'package:intl/intl.dart';
 class Memo {
   int orderId;
   int memoId;
+  String memoPreview;
   String memo;
   int backColor;
 
   Memo({
     this.orderId,
     this.memoId,
+    this.memoPreview,
     this.memo,
     this.backColor,
   });
@@ -18,38 +20,40 @@ class Memo {
     return {
       'orderId': orderId,
       'memoId': memoId,
+      'memoPreview': memoPreview,
       'memo': memo,
       'backColor': backColor,
     };
   }
+
   @override
   String toString() {
-    return 'Memo{orderId: $orderId, memoId: $memoId, memo: $memo, backColor: $backColor}';
+    return 'Memo{orderId: $orderId, memoId: $memoId, memoPreview: $memoPreview, memo: $memo, backColor: $backColor}';
   }
 }
 
-class MemoPreview {
-  int id;
-  String memoPreview;
-  int backColor;
+// class MemoPreview {
+//   int id;
+//   String memoPreview;
+//   int backColor;
 
-  MemoPreview({
-    this.id,
-    this.memoPreview,
-    this.backColor,
-  });
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'memoPreview': memoPreview,
-      'backColor': backColor,
-    };
-  }
-  @override
-  String toString() {
-    return 'MemoPreview{id: $id, memoPreview: $memoPreview, backColor: $backColor}';
-  }
-}
+//   MemoPreview({
+//     this.id,
+//     this.memoPreview,
+//     this.backColor,
+//   });
+//   Map<String, dynamic> toMap() {
+//     return {
+//       'id': id,
+//       'memoPreview': memoPreview,
+//       'backColor': backColor,
+//     };
+//   }
+//   @override
+//   String toString() {
+//     return 'MemoPreview{id: $id, memoPreview: $memoPreview, backColor: $backColor}';
+//   }
+// }
 
 class SQLite {
   static Future<Database> get database async {
@@ -71,12 +75,8 @@ class SQLite {
           ")",
         );
         // // テスト用
-        await db.execute(
-          "INSERT INTO memo (memo, backColor) VALUES (\"あいうえおかきくけこさしすせそ\nあいうえお\", 0)"
-        );
-        await db.execute(
-          "INSERT INTO memoOrder (memoId) VALUES (1)"
-        );
+        await db.execute("INSERT INTO memo (memo, backColor) VALUES (\"あいうえおかきくけこさしすせそ\nあいうえお\", 0)");
+        await db.execute("INSERT INTO memoOrder (memoId) VALUES (1)");
       },
       version: 1,
     );
@@ -94,20 +94,18 @@ class SQLite {
   }
 
   /** メモプレビュー取得用 */
-  static Future<List<MemoPreview>> getMemoPreview() async {
+  static Future<List<Memo>> getMemoPreview() async {
     final Database db = await database;
     // リストを取得
-    final List<Map<String, dynamic>> maps = 
-      await db.rawQuery(
-        "SELECT mO.id, SUBSTR(m.memo, 1, 20) AS memoPreview, m.backColor "
+    final List<Map<String, dynamic>> maps = await db.rawQuery("SELECT mO.id, mO.memoId, SUBSTR(m.memo, 1, 20) AS memoPreview, m.backColor "
         "FROM memoOrder AS mO "
         "INNER JOIN memo AS m "
-        "ON mO.memoId = m.id"
-      );
-    List<MemoPreview> list = [];
+        "ON mO.memoId = m.id");
+    List<Memo> list = [];
     for (int i = 0; i < maps.length; i++) {
-      list.add(MemoPreview(
-        id: maps[i]['id'],
+      list.add(Memo(
+        orderId: maps[i]['id'],
+        memoId: maps[i]['memoId'],
         memoPreview: maps[i]['memoPreview'],
         backColor: maps[i]['backColor'],
       ));
@@ -119,15 +117,13 @@ class SQLite {
   static Future<Memo> getMemo(int orderId) async {
     final Database db = await database;
     // リストを取得
-    final List<Map<String, dynamic>> maps = 
-      await db.rawQuery(
+    final List<Map<String, dynamic>> maps = await db.rawQuery(
         "SELECT mO.id, mO.memoId, m.memo, m.backColor "
         "FROM memoOrder AS mO "
         "INNER JOIN memo AS m "
         "ON mO.memoId = m.id "
         "WHERE memoOrder._id = ?",
-        [orderId]
-      );
+        [orderId]);
     Memo memo;
     memo = Memo(
       orderId: maps[0]['id'],
@@ -141,67 +137,55 @@ class SQLite {
   /** 編集したメモ保存用 */
   static Future<void> updateMemo(Memo memo) async {
     final Database db = await database;
-    await db.rawUpdate(
-      'UPDATE memo SET memo = ?, backColor = ? WHERE id = ?', 
-      [memo.memo, memo.backColor, memo.memoId]
-    );
+    await db.rawUpdate('UPDATE memo SET memo = ?, backColor = ? WHERE id = ?', [memo.memo, memo.backColor, memo.memoId]);
   }
 
   /** 新規作成したメモ登録用 */
   static Future<void> insertMemo(Memo memo) async {
     final Database db = await database;
     /** memo表に登録 */
-    await db.rawInsert(
-      'INSERT INTO memo(memo, backColor) VALUES (?, ?)',
-      [memo.memo, memo.backColor]
-    );
+    await db.rawInsert('INSERT INTO memo(memo, backColor) VALUES (?, ?)', [memo.memo, memo.backColor]);
     /** 先ほど登録したメモのIDを取得 */
     int memoId = await getMaxMemoId();
     /** memoOrder表の最後に登録 */
-    await db.rawInsert(
-      'INSERT INTO memoOrder(memoId) VALUES (?)',
-      [memoId]
-    );
+    await db.rawInsert('INSERT INTO memoOrder(memoId) VALUES (?)', [memoId]);
   }
-  /** 新規作成したメモ登録用 */
+
+  /** 新規作成したメモIDを取得(memo　の主キーの一番大きい数字を取得) */
   static Future<int> getMaxMemoId() async {
     final Database db = await database;
     // リストを取得
-    final List<Map<String, dynamic>> maps = 
-      await db.rawQuery("SELECT MAX(id) FROM memo");
+    final List<Map<String, dynamic>> maps = await db.rawQuery("SELECT MAX(id) FROM memo");
     int memoId = maps[0]['id'];
     return memoId;
   }
+
 //TODO
-  /** 貯金リスト全削除用 */
-  static Future<void> delete() async {
+  /** メモの削除用 TODO*/
+  static Future<void> deleteMemo(int memoId) async {
+    /** 旧付箋リストのメモIDリストを取得 */
+    /** 削除するメモを取り除く */
+    /** 新しい memoOrder を登録 */
+    /** メモ本体を削除 */
     final db = await database;
-    await db.delete(
-      'thokin',
-    );
+    await db.delete('memo', where: "id = ?", whereArgs: [memoId]);
   }
 
-  /** 目標リスト取得 */
-  static Future<List<Goal>> getGoal() async {
-    final Database db = await database;
-    // リストを取得
-    final List<Map<String, dynamic>> maps = await db.rawQuery('SELECT * FROM goals ORDER BY entryDate');
-    List<Goal> list = [];
-    for (int i = 0; i < maps.length; i++) {
-      list.add(Goal(
-        entryDate: DateTime.parse(maps[i]['entryDate']),
-        achieveDate: maps[i]['achieveDate'] == null ? null : DateTime.parse(maps[i]['achieveDate']),
-        goal: maps[i]['goal'],
-        memo: maps[i]['memo'],
-        flg: maps[i]['flg'] != 0 ? true : false,
-      ));
-    }
-    print("Goals:$list");
+  /** メモの並び替え */
+  static Future<List<Memo>> sortMemoOrder(List<int> memoIds) async {
+    /** 新しい memoOrder を登録 */
+    await renewMemoOrder(memoIds);
+    /** 新しい付箋リストを取得 */
+    List<Memo> list = await getMemoPreview();
+
     return list;
   }
 
-  /** 今の目標取得(日付順にIDふっているのでIDの最大値の行) */
-  static Future<Goal> getGoalNow() async {
+  /** 新しい順番のmemoOrderを登録 */
+  static Future<void> renewMemoOrder(List<int> memoIds) async {
+    /** 全削除 */
+    await deleteMemoorders();
+    /** memoIdsを順番に登録 */
     final Database db = await database;
     List<Map<String, dynamic>> maps = [];
     maps = await db.rawQuery('SELECT * FROM goals WHERE id = (SELECT MAX(id) FROM goals)');
@@ -225,9 +209,17 @@ class SQLite {
             memo: maps[0]['memo'],
             flg: maps[0]['flg'] != 0 ? true : false,
           );
-          print("maxGoal:$maxGoal");
+    print("maxGoal:$maxGoal");
     return maxGoal;
   }
+
+  /** memoOrder全削除用 TODO*/
+  static Future<void> deleteMemoorders() async {
+    final db = await database;
+    await db.delete('memoOrder');
+  }
+
+  //TODO
   /** 今の目標取得(日付順にIDふっているのでIDの最大値の行) */
   static Future<int> getGoalNowId() async {
     final Database db = await database;
@@ -238,6 +230,7 @@ class SQLite {
     print("maxGoalId:$maxGoalId");
     return maxGoalId;
   }
+
   /** 目標登録用 */
   static Future<void> insertGoal(Goal goal) async {
     DateTime now = DateTime.now();
@@ -252,7 +245,7 @@ class SQLite {
       false,
     ]);
   }
-  
+
   /** 目標達成登録用 */
   static Future<void> achieveNowGoal(bool flg) async {
     int nowID = await getGoalNowId();
@@ -260,9 +253,6 @@ class SQLite {
     DateFormat format = DateFormat('yyyy-MM-dd HH:mm:ss');
     final Database db = await database;
     // リストを順番に登録
-    await db.rawUpdate(
-      'UPDATE goals SET flg = ?, achieveDate = ? WHERE id = ?', 
-      [flg, format.format(now), nowID]
-    );
+    await db.rawUpdate('UPDATE goals SET flg = ?, achieveDate = ? WHERE id = ?', [flg, format.format(now), nowID]);
   }
 }
