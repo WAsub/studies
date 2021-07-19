@@ -47,11 +47,12 @@ class ReorderableGridViewState extends State<ReorderableGridView> {
         /** プレビュー用アイテムを画面外に飛ばす */
         top = -gredSize;
         left = -gredSize;
-        /** 各アイテムのPositionを設定 */
-        for (int index = 0; index < widget.children.length; index++) {
-          fixedPosition.add(Offset((index % widget.crossAxisCount * gredSize) + index % widget.crossAxisCount * widget.axisSpacing, (index ~/ widget.crossAxisCount * gredSize) + index ~/ widget.crossAxisCount * widget.axisSpacing));
-        }
       });
+      /** 各アイテムのPositionを設定 */
+      fixedPosition = [];
+      for (int index = 0; index < widget.children.length; index++) {
+        fixedPosition.add(Offset((index % widget.crossAxisCount * gredSize) + index % widget.crossAxisCount * widget.axisSpacing, (index ~/ widget.crossAxisCount * gredSize) + index ~/ widget.crossAxisCount * widget.axisSpacing));
+      }
 
       /** グリッドビュー */
       return SingleChildScrollView(

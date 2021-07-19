@@ -4,15 +4,24 @@ import 'package:tag_memo/customWidget/husenContainer.dart';
 import "dart:async";
 
 class ReorderableHusenView extends StatefulWidget {
+  /** 列の数 */
   int crossAxisCount = 3;
+  /** 付箋と付箋の間の隙間 */
   double axisSpacing = 4.0;
+  /** アイテム */
   List<Widget> children = [];
+  /** 入れ替え後返して欲しい配列データを入れる */
+  List<dynamic> keyData = [];
+  /** 入れ替え後keyDataを親へ渡す */
+  Function(List<dynamic>) callback;
 
   ReorderableHusenView({
     Key key,
     this.crossAxisCount,
     this.axisSpacing,
     this.children,
+    this.keyData,
+    this.callback,
   }) : super(key: key);
 
   @override
@@ -35,6 +44,8 @@ class ReorderableHusenViewState extends State<ReorderableHusenView> {
   double left = 0;
   Widget previewItem;
 
+  
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
@@ -48,15 +59,17 @@ class ReorderableHusenViewState extends State<ReorderableHusenView> {
         /** プレビュー用アイテムを画面外に飛ばす */
         top = -gredSize;
         left = -gredSize;
-        /** 各アイテムのPositionを設定 */
-        for (int index = 0; index < widget.children.length; index++) {
-          fixedPosition.add(Offset(
-            (index % widget.crossAxisCount * gredSize) + index % widget.crossAxisCount * widget.axisSpacing, 
-            (index ~/ widget.crossAxisCount * gredSize) + index ~/ widget.crossAxisCount * widget.axisSpacing
-          ));
-          mekuriflgs.add(false);
-        }
       });
+      /** 各アイテムのPositionを設定 */
+      fixedPosition = [];
+      mekuriflgs = [];
+      for(int index = 0; index < widget.children.length; index++){
+        fixedPosition.add(Offset(
+          (index % widget.crossAxisCount * gredSize) + index % widget.crossAxisCount * widget.axisSpacing, 
+          (index ~/ widget.crossAxisCount * gredSize) + index ~/ widget.crossAxisCount * widget.axisSpacing
+        ));
+        mekuriflgs.add(false);
+      }
 
       /** グリッドビュー */
       return SingleChildScrollView(
@@ -71,6 +84,7 @@ class ReorderableHusenViewState extends State<ReorderableHusenView> {
                   top: fixedPosition[index].dy,
                   left: fixedPosition[index].dx,
                   child: GestureDetector(
+                    // onTap: widget.onTap(),
                     onLongPressStart: (LongPressStartDetails details) {
                       /** 空のアイテムの時は後の入れ替え処理をしないようにする */
                       if (widget.children[index] == null){
@@ -116,6 +130,7 @@ class ReorderableHusenViewState extends State<ReorderableHusenView> {
                           if (moved >= widget.children.length) {
                             for (int i = widget.children.length; i <= moved; i++) {
                               widget.children = listAddAt(widget.children, i, null);
+                              widget.keyData = listAddAt(widget.keyData, i, null);
                               fixedPosition = listAddAt(fixedPosition, i, Offset((i % widget.crossAxisCount * gredSize) + i % widget.crossAxisCount * widget.axisSpacing, (i ~/ widget.crossAxisCount * gredSize) + i ~/ widget.crossAxisCount * widget.axisSpacing));
                               mekuriflgs = listAddAt(mekuriflgs, i, false);
                             }
@@ -123,9 +138,14 @@ class ReorderableHusenViewState extends State<ReorderableHusenView> {
                           /** 入れ替え先の付箋をめくる */
                           mekuriflgs[moved] = true;
                           /** 入れ替え */
+                          var cData = widget.keyData[index];
                           widget.children[index] = widget.children[moved];
+                          widget.keyData[index] = widget.keyData[moved];
                           widget.children[moved] = previewItem;
+                          widget.keyData[moved] = cData;
+                          /** 末尾の空白を消す */
                           widget.children = endNullDelete(widget.children);
+                          widget.keyData = endNullDelete(widget.keyData);
                           /** プレビュー用アイテムを画面外に飛ばす */
                           previewItem = null;
                           top = -gredSize;
@@ -136,6 +156,8 @@ class ReorderableHusenViewState extends State<ReorderableHusenView> {
                         /** 一瞬待ってから付箋のめくりを戻す */
                         await new Future.delayed(new Duration(milliseconds: 110));
                         setState(() => mekuriflgs[moved] = false);
+                        /** keyDataを親に返す */
+                        widget.callback(widget.keyData);
                       }
                     },
                     /** アイテム
