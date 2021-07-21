@@ -32,29 +32,6 @@ class Memo {
   }
 }
 
-// class MemoPreview {
-//   int id;
-//   String memoPreview;
-//   int backColor;
-
-//   MemoPreview({
-//     this.id,
-//     this.memoPreview,
-//     this.backColor,
-//   });
-//   Map<String, dynamic> toMap() {
-//     return {
-//       'id': id,
-//       'memoPreview': memoPreview,
-//       'backColor': backColor,
-//     };
-//   }
-//   @override
-//   String toString() {
-//     return 'MemoPreview{id: $id, memoPreview: $memoPreview, backColor: $backColor}';
-//   }
-// }
-
 class SQLite {
   static Future<Database> get database async {
     final Future<Database> _database = openDatabase(
@@ -75,7 +52,7 @@ class SQLite {
           ")",
         );
         // テスト用
-        await db.execute("INSERT INTO memo (memo, backColor) VALUES (\"あいうえおかきくけこさしすせそ\nあいうえお\", 0)");
+        await db.execute("INSERT INTO memo (memo, backColor) VALUES (\"あいうえおかきくけこさしすせそ\nあいうえお\", 300)");
         await db.execute("INSERT INTO memoOrder (memoId) VALUES (1)");
       },
       version: 1,
@@ -102,7 +79,7 @@ class SQLite {
           memoPreview: maps[i]['memoPreview'],
           backColor: maps[i]['backColor'],
         ));
-      }else{
+      }else{ // 空白はnull
         list.add(null);
       }
     }
@@ -116,7 +93,7 @@ class SQLite {
     final List<Map<String, dynamic>> maps = await db.rawQuery(
         "SELECT mO.id, mO.memoId, m.memo, m.backColor "
         "FROM memoOrder AS mO "
-        "INNER JOIN memo AS m "
+        "LEFT OUTER JOIN memo AS m "
         "ON mO.memoId = m.id "
         "WHERE memoOrder.id = ?",
         [orderId]);

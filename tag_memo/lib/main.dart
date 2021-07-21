@@ -1,11 +1,14 @@
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:tag_memo/customWidget/husenContainer.dart';
 import 'package:tag_memo/data/sqlite.dart';
 import 'package:tag_memo/editingMemo.dart';
+import 'package:tag_memo/theme/color.dart';
 import 'customWidget/customText.dart';
 import 'customWidget/reorderableHusenView.dart';
 import 'theme/dynamic_theme.dart';
+import 'theme/theme_color.dart';
 
 void main(){
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,6 +49,8 @@ class _TagMemoState extends State<TagMemo> {
   Widget cpi;
   /** 初期化を一回だけするためのライブラリ */
   final AsyncMemoizer memoizer = AsyncMemoizer();
+  /** テーマカラー */
+  MaterialColor themeColor = MyColor.rose;
   /** メモプレビューリスト */
   List<Memo> _previewList = [];
 
@@ -53,6 +58,8 @@ class _TagMemoState extends State<TagMemo> {
   Future<void> loading() async {
     /** 更新終わるまでグルグルを出しとく */
     setState(() => cpi = CircularProgressIndicator());
+    /** テーマカラーを取得 */
+    themeColor = await ThemeColor.getThemeColor();
     /** プレビューリスト取得 */
     _previewList = await SQLite.getMemoPreview();
     /** グルグル終わり */
@@ -77,9 +84,9 @@ class _TagMemoState extends State<TagMemo> {
             ReorderableHusenView(
               crossAxisCount: 3,
               axisSpacing: 6.0,
-              callback: (callbackList) async {
+              callback: (colors, callbacData) async {
                 List<int> memoIds = [];
-                for(Memo cblist in callbackList){
+                for(Memo cblist in callbacData){
                   if(cblist == null){
                     memoIds.add(0);
                   }else{
@@ -89,6 +96,14 @@ class _TagMemoState extends State<TagMemo> {
                 await SQLite.renewMemoOrder(memoIds);
                 loading();
               },
+              colors: List.generate(_previewList.length, (index) {
+                /** 空白ならnull */
+                if(_previewList[index] == null){ return null;}
+                /** アイテムがあるなら色をセット */
+                Color color = themeColor[_previewList[index].backColor];
+                Color backSide = Color.fromARGB(255, color.red-50, color.green-50, color.blue-50);
+                return HusenColor(color: color, backSideColor: backSide);
+              }),
               children: List.generate(_previewList.length, (index) {
                 /** 空白ならnull */
                 if(_previewList[index] == null){
