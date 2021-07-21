@@ -11,16 +11,16 @@ class ReorderableHusenView extends StatefulWidget {
   /** アイテム */
   List<Widget> children = [];
   /** 入れ替え後返して欲しい配列データを入れる */
-  List<dynamic> keyData = [];
+  List<dynamic> callbackData = [];
   /** 入れ替え後keyDataを親へ渡す */
-  Function(List<dynamic>) callback;
+  Function(dynamic) callback;
 
   ReorderableHusenView({
     Key key,
     this.crossAxisCount,
     this.axisSpacing,
-    this.children,
-    this.keyData,
+    @required this.children,
+    @required this.callbackData,
     this.callback,
   }) : super(key: key);
 
@@ -36,6 +36,7 @@ class ReorderableHusenViewState extends State<ReorderableHusenView> {
   double gredSize;
   /** アイテムのPosition */
   List<Offset> fixedPosition = [];
+  /** 付箋ウィジェットの制御 */
   List<bool> mekuriflgs = [];
   /** previewに必要なあれこれ */
   bool flg = true;
@@ -44,10 +45,12 @@ class ReorderableHusenViewState extends State<ReorderableHusenView> {
   double left = 0;
   Widget previewItem;
 
-  
-
   @override
   Widget build(BuildContext context) {
+    /** デフォルト値 */
+    widget.crossAxisCount = widget.crossAxisCount==null ? 3 : widget.crossAxisCount;
+    widget.axisSpacing = widget.axisSpacing==null ? 6.0 : widget.axisSpacing;
+    /** ウィジェット */
     return LayoutBuilder(builder: (context, constraints) {
       gredSize = (constraints.maxWidth - widget.axisSpacing * (widget.crossAxisCount - 1)) / widget.crossAxisCount;
       /** 余裕をもってスクロールできるように設定 */
@@ -70,7 +73,6 @@ class ReorderableHusenViewState extends State<ReorderableHusenView> {
         ));
         mekuriflgs.add(false);
       }
-
       /** グリッドビュー */
       return SingleChildScrollView(
           child: Container(
@@ -130,7 +132,7 @@ class ReorderableHusenViewState extends State<ReorderableHusenView> {
                           if (moved >= widget.children.length) {
                             for (int i = widget.children.length; i <= moved; i++) {
                               widget.children = listAddAt(widget.children, i, null);
-                              widget.keyData = listAddAt(widget.keyData, i, null);
+                              widget.callbackData = listAddAt(widget.callbackData, i, null);
                               fixedPosition = listAddAt(fixedPosition, i, Offset((i % widget.crossAxisCount * gredSize) + i % widget.crossAxisCount * widget.axisSpacing, (i ~/ widget.crossAxisCount * gredSize) + i ~/ widget.crossAxisCount * widget.axisSpacing));
                               mekuriflgs = listAddAt(mekuriflgs, i, false);
                             }
@@ -138,14 +140,14 @@ class ReorderableHusenViewState extends State<ReorderableHusenView> {
                           /** 入れ替え先の付箋をめくる */
                           mekuriflgs[moved] = true;
                           /** 入れ替え */
-                          var cData = widget.keyData[index];
+                          var cData = widget.callbackData[index];
                           widget.children[index] = widget.children[moved];
-                          widget.keyData[index] = widget.keyData[moved];
+                          widget.callbackData[index] = widget.callbackData[moved];
                           widget.children[moved] = previewItem;
-                          widget.keyData[moved] = cData;
+                          widget.callbackData[moved] = cData;
                           /** 末尾の空白を消す */
                           widget.children = endNullDelete(widget.children);
-                          widget.keyData = endNullDelete(widget.keyData);
+                          widget.callbackData = endNullDelete(widget.callbackData);
                           /** プレビュー用アイテムを画面外に飛ばす */
                           previewItem = null;
                           top = -gredSize;
@@ -157,7 +159,7 @@ class ReorderableHusenViewState extends State<ReorderableHusenView> {
                         await new Future.delayed(new Duration(milliseconds: 110));
                         setState(() => mekuriflgs[moved] = false);
                         /** keyDataを親に返す */
-                        widget.callback(widget.keyData);
+                        widget.callback(widget.callbackData);
                       }
                     },
                     /** アイテム

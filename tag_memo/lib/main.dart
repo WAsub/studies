@@ -58,20 +58,6 @@ class _TagMemoState extends State<TagMemo> {
     /** グルグル終わり */
     setState(() => cpi = null);
   }
-  /** 付箋の場所を変えたときの処理 */
-  callback(callbackList) async {
-    List<int> memoIds = [];
-    for(Memo cblist in callbackList){
-      if(cblist == null){
-        memoIds.add(0);
-      }else{
-        memoIds.add(cblist.memoId);
-      }
-    }
-    await SQLite.renewMemoOrder(memoIds);
-    loading();
-  }
-
   @override
   void initState() {
     memoizer.runOnce(() async => loading());
@@ -91,7 +77,18 @@ class _TagMemoState extends State<TagMemo> {
             ReorderableHusenView(
               crossAxisCount: 3,
               axisSpacing: 6.0,
-              callback: callback,
+              callback: (callbackList) async {
+                List<int> memoIds = [];
+                for(Memo cblist in callbackList){
+                  if(cblist == null){
+                    memoIds.add(0);
+                  }else{
+                    memoIds.add(cblist.memoId);
+                  }
+                }
+                await SQLite.renewMemoOrder(memoIds);
+                loading();
+              },
               children: List.generate(_previewList.length, (index) {
                 /** 空白ならnull */
                 if(_previewList[index] == null){
@@ -116,7 +113,7 @@ class _TagMemoState extends State<TagMemo> {
                   )
                 );
               }),
-              keyData: _previewList,
+              callbackData: _previewList,
             ),
             /** ロード */
             Container(
