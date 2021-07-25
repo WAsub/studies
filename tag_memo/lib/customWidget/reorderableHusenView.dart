@@ -7,9 +7,9 @@ import 'package:tag_memo/theme/app_theme.dart';
 
 class ReorderableHusenView extends StatefulWidget {
   /** 列の数 */
-  int crossAxisCount = 3;
+  final int crossAxisCount;
   /** 付箋と付箋の間の隙間 */
-  double axisSpacing = 4.0;
+  final double axisSpacing;
   /** アイテム */
   List<Widget> children = [];
   /** 入れ替え後返して欲しい配列データを入れる */
@@ -21,8 +21,8 @@ class ReorderableHusenView extends StatefulWidget {
 
   ReorderableHusenView({
     Key key,
-    this.crossAxisCount,
-    this.axisSpacing,
+    this.crossAxisCount = 3,
+    this.axisSpacing = 4.0,
     @required this.children,
     @required this.callbackData,
     this.colors,
@@ -54,8 +54,6 @@ class ReorderableHusenViewState extends State<ReorderableHusenView> {
   @override
   Widget build(BuildContext context) {
     /** デフォルト値 */
-    widget.crossAxisCount = widget.crossAxisCount==null ? 3 : widget.crossAxisCount;
-    widget.axisSpacing = widget.axisSpacing==null ? 6.0 : widget.axisSpacing;
     if(widget.colors == null){
       for(int index = 0; index < widget.children.length; index++){
         widget.colors[index] = HusenColor(color: AppTheme.theme_rose().primaryColor);

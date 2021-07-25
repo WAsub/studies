@@ -54,6 +54,8 @@ class SQLite {
         // テスト用
         await db.execute("INSERT INTO memo (memo, backColor) VALUES (\"あいうえおかきくけこさしすせそ\nあいうえお\", 300)");
         await db.execute("INSERT INTO memoOrder (memoId) VALUES (1)");
+        await db.execute("INSERT INTO memo (memo, backColor) VALUES (\"あいうえおかきくけこさしすせそ\nあいうえお\nあいうえお\nあいうえお\nあいうえお\nあいうえお\", 600)");
+        await db.execute("INSERT INTO memoOrder (memoId) VALUES (2)");
       },
       version: 1,
     );
@@ -64,22 +66,21 @@ class SQLite {
   static Future<List<Memo>> getMemoPreview() async {
     final Database db = await database;
     // リストを取得
-    final List<Map<String, dynamic>> maps = await db.rawQuery(
-      "SELECT mO.id, mO.memoId, SUBSTR(m.memo, 1, 20) AS memoPreview, m.backColor "
-      "FROM memoOrder AS mO "
-      "LEFT OUTER JOIN memo AS m "
-      "ON mO.memoId = m.id"
-    );
+    final List<Map<String, dynamic>> maps = await db.rawQuery("SELECT mO.id, mO.memoId, SUBSTR(m.memo, 1, 150) AS memoPreview, m.backColor "
+        "FROM memoOrder AS mO "
+        "LEFT OUTER JOIN memo AS m "
+        "ON mO.memoId = m.id");
     List<Memo> list = [];
     for (int i = 0; i < maps.length; i++) {
-      if(maps[i]['memoId'] != 0){
+      if (maps[i]['memoId'] != 0) {
         list.add(Memo(
           orderId: maps[i]['id'],
           memoId: maps[i]['memoId'],
           memoPreview: maps[i]['memoPreview'],
           backColor: maps[i]['backColor'],
         ));
-      }else{ // 空白はnull
+      } else {
+        // 空白はnull
         list.add(null);
       }
     }
@@ -87,7 +88,7 @@ class SQLite {
   }
 
   /** メモ取得用 */
-  static Future<Memo> getMemo(int orderId) async {
+  static Future<Memo> getMemo(int memoId) async {
     final Database db = await database;
     // リストを取得
     final List<Map<String, dynamic>> maps = await db.rawQuery(
@@ -95,8 +96,8 @@ class SQLite {
         "FROM memoOrder AS mO "
         "LEFT OUTER JOIN memo AS m "
         "ON mO.memoId = m.id "
-        "WHERE memoOrder.id = ?",
-        [orderId]);
+        "WHERE mO.memoId = ?",
+        [memoId]);
     Memo memo;
     memo = Memo(
       orderId: maps[0]['id'],
@@ -132,18 +133,19 @@ class SQLite {
     int memoId = maps[0]['id'];
     return memoId;
   }
+
   /** memoOrder 主キー昇順　に並んだ memoId のリスト */
   static Future<List<int>> getMemoIds() async {
     final Database db = await database;
     // リストを取得
-    final List<Map<String, dynamic>> maps = await db.rawQuery(
-      "SELECT memoId FROM memoOrder ORDER BY id asc");
+    final List<Map<String, dynamic>> maps = await db.rawQuery("SELECT memoId FROM memoOrder ORDER BY id asc");
     List<int> list = [];
     for (int i = 0; i < maps.length; i++) {
       list.add(maps[i]['memoId']);
     }
     return list;
   }
+
   /** メモの削除用 */
   static Future<void> deleteMemo(int memoId) async {
     /** 旧付箋リストのメモIDリストを取得 */
@@ -175,9 +177,7 @@ class SQLite {
     final Database db = await database;
     List<Map<String, dynamic>> maps = [];
     for (int i = 0; i < memoIds.length; i++) {
-      await db.rawInsert(
-        'INSERT INTO memoOrder (memoId) VALUES (?)', [memoIds[i]]
-      );
+      await db.rawInsert('INSERT INTO memoOrder (memoId) VALUES (?)', [memoIds[i]]);
     }
   }
 

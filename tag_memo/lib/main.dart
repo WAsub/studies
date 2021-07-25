@@ -82,8 +82,6 @@ class _TagMemoState extends State<TagMemo> {
 
         return Stack(children: [
             ReorderableHusenView(
-              crossAxisCount: 3,
-              axisSpacing: 6.0,
               callback: (colors, callbacData) async {
                 List<int> memoIds = [];
                 for(Memo cblist in callbacData){
@@ -113,18 +111,18 @@ class _TagMemoState extends State<TagMemo> {
                 return GestureDetector(
                   onTap: (){
                     print("hello${index}");
-                    // Navigator.of(context).push(
-                    //   MaterialPageRoute(builder: (context) {
-                    //     // メモ編集画面へ
-                    //     return EditingMemo();
-                    //   }),
-                    // ).then((value) async {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) {
+                        // メモ編集画面へ
+                        return EditingMemo(memoId: _previewList[index].memoId,);
+                      }),
+                    ).then((value) async {
                       
-                    // });
+                    });
                   },
                   child: CustomText(
                     _previewList[index].memoPreview,
-                    overflow: TextOverflow.ellipsis, maxLines: 5,
+                    overflow: TextOverflow.ellipsis, maxLines: 4,
                   )
                 );
               }),
