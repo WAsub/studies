@@ -62,6 +62,7 @@ class _TagMemoState extends State<TagMemo> {
     themeColor = await ThemeColor.getThemeColor();
     /** プレビューリスト取得 */
     _previewList = await SQLite.getMemoPreview();
+    // print(_previewList);
     /** グルグル終わり */
     setState(() => cpi = null);
   }
@@ -99,7 +100,8 @@ class _TagMemoState extends State<TagMemo> {
                 if(_previewList[index] == null){ return null;}
                 /** アイテムがあるなら色をセット */
                 Color color = themeColor[_previewList[index].backColor];
-                Color backSide = Color.fromARGB(255, color.red-50, color.green-50, color.blue-50);
+                // Color backSide = Color.fromARGB(255, color.red-50, color.green-50, color.blue-50);
+                Color backSide = themeColor[_previewList[index].backColor];
                 return HusenColor(color: color, backSideColor: backSide);
               }),
               children: List.generate(_previewList.length, (index) {
@@ -117,7 +119,7 @@ class _TagMemoState extends State<TagMemo> {
                         return EditingMemo(memoId: _previewList[index].memoId,);
                       }),
                     ).then((value) async {
-                      
+                      loading();
                     });
                   },
                   child: CustomText(
@@ -143,7 +145,16 @@ class _TagMemoState extends State<TagMemo> {
       }),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
-        onPressed: () {},
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (context) {
+              // メモ編集画面へ
+              return EditingMemo(memoId: 0,);
+            }),
+          ).then((value) async {
+            loading();
+          });
+        },
       ),
     );
   }

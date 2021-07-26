@@ -22,7 +22,9 @@ class CustomText extends StatelessWidget {
   Widget build(BuildContext context) {
     double widgetHeight;
     double widgetWidth;
+    // print("data:$data");
     List<String> datas = this.data.split('\n');
+    // print("datas:$datas");
 
     return LayoutBuilder(builder: (context, constraints) {
         widgetHeight = constraints.maxHeight;

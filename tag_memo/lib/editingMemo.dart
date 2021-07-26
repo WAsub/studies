@@ -48,7 +48,12 @@ class EditingMemoState extends State<EditingMemo> {
     /** テーマカラーを取得 */
     themeColor = await ThemeColor.getThemeColor();
     /** メモ取得 */
-    _memo = await SQLite.getMemo(widget.memoId);
+    if(widget.memoId == 0){
+      _memo = Memo(memoId: widget.memoId, memo: "", backColor: 50);
+    }else{
+      _memo = await SQLite.getMemo(widget.memoId);
+    }
+    /**  */
     controller = TextEditingController(text: _memo.memo);
     backColor = themeColor[_memo.backColor];
     nextColor = themeColor[next(_memo.backColor)];
@@ -59,13 +64,26 @@ class EditingMemoState extends State<EditingMemo> {
   @override
   void initState() {
     memoizer.runOnce(() async => loading());
+    // loading();
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+      appBar: AppBar(
+        title: Text(widget.title),
+        actions: [
+          widget.memoId == 0 ? Container() :
+          IconButton(
+            icon: Icon(Icons.restore_from_trash), 
+            onPressed: () async {
+              await SQLite.deleteMemo(_memo.memoId);
+              Navigator.pop(context,);
+            },
+          )
+        ],
+      ),
       body: LayoutBuilder(builder: (context, constraints) {
           deviceHeight = constraints.maxHeight;
           deviceWidth = constraints.maxWidth;
@@ -82,18 +100,18 @@ class EditingMemoState extends State<EditingMemo> {
                     controller: controller,
                     maxLines: 500,
                     decoration: new InputDecoration(
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          width: 1.5,
-                          color: Theme.of(context).accentColor,
-                      ),),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          width: 1.5,
-                          color: Theme.of(context).accentColor,
-                      ),),
+                      // enabledBorder: OutlineInputBorder(
+                      //   borderSide: BorderSide(
+                      //     width: 1.5,
+                      //     color: Theme.of(context).accentColor,
+                      // ),),
+                      // focusedBorder: OutlineInputBorder(
+                      //   borderSide: BorderSide(
+                      //     width: 1.5,
+                      //     color: Theme.of(context).accentColor,
+                      // ),),
                       border: InputBorder.none,
-                      hintText: 'Add your text here',
+                      hintText: 'メモを書く',
                     ),
                     keyboardType: TextInputType.multiline,
                   ),
@@ -113,7 +131,16 @@ class EditingMemoState extends State<EditingMemo> {
                     floatingActionButton: FloatingActionButton(
                       child: Icon(Icons.check),
                       backgroundColor: Theme.of(context).accentColor,
-                      onPressed: () {},
+                      onPressed: () async {
+                        _memo.memo = controller.text == null ? "" : controller.text;
+                        if(_memo.memoId == 0){
+                          print(_memo);
+                          await SQLite.insertMemo(_memo);
+                        }else{
+                          await SQLite.updateMemo(_memo);
+                        }
+                        Navigator.pop(context,);
+                      },
                     ),
                     bottomNavigationBar: BottomAppBar(
                       color: Theme.of(context).primaryColor,
@@ -125,8 +152,9 @@ class EditingMemoState extends State<EditingMemo> {
                         ),
                       ),
                       child: new Row(children: [
-                          OutlinedButton(
-                            style: OutlinedButton.styleFrom(
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              primary: Theme.of(context).primaryColor,
                               side: BorderSide(
                                 color: nextColor,
                                 width: 5,
@@ -135,7 +163,13 @@ class EditingMemoState extends State<EditingMemo> {
                               shape: CircleBorder(),
                             ),
                             child: null,
-                            onPressed: (){}, 
+                            onPressed: (){
+                              setState(() {
+                                _memo.backColor = next(_memo.backColor);
+                                backColor = themeColor[_memo.backColor];
+                                nextColor = themeColor[next(_memo.backColor)];
+                              });
+                            }, 
                           ),
                       ]),
                     ),

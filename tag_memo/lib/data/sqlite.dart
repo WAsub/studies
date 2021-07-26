@@ -116,6 +116,7 @@ class SQLite {
 
   /** 新規作成したメモ登録用 */
   static Future<void> insertMemo(Memo memo) async {
+    print(memo);
     final Database db = await database;
     /** memo表に登録 */
     await db.rawInsert('INSERT INTO memo(memo, backColor) VALUES (?, ?)', [memo.memo, memo.backColor]);
