@@ -46,7 +46,7 @@ class EditingMemoState extends State<EditingMemo> {
     /** 更新終わるまでグルグルを出しとく */
     setState(() => cpi = CircularProgressIndicator());
     /** テーマカラーを取得 */
-    themeColor = await ThemeColor.getThemeColor();
+    themeColor = await ThemeColor.getBasicAndThemeColor();
     /** メモ取得 */
     if(widget.memoId == 0){
       _memo = Memo(memoId: widget.memoId, memo: "", backColor: 50);
@@ -134,7 +134,6 @@ class EditingMemoState extends State<EditingMemo> {
                       onPressed: () async {
                         _memo.memo = controller.text == null ? "" : controller.text;
                         if(_memo.memoId == 0){
-                          print(_memo);
                           await SQLite.insertMemo(_memo);
                         }else{
                           await SQLite.updateMemo(_memo);

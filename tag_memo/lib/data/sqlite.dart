@@ -66,10 +66,12 @@ class SQLite {
   static Future<List<Memo>> getMemoPreview() async {
     final Database db = await database;
     // リストを取得
-    final List<Map<String, dynamic>> maps = await db.rawQuery("SELECT mO.id, mO.memoId, SUBSTR(m.memo, 1, 150) AS memoPreview, m.backColor "
-        "FROM memoOrder AS mO "
-        "LEFT OUTER JOIN memo AS m "
-        "ON mO.memoId = m.id");
+    final List<Map<String, dynamic>> maps = await db.rawQuery(
+      "SELECT mO.id, mO.memoId, SUBSTR(m.memo, 1, 150) AS memoPreview, m.backColor "
+      "FROM memoOrder AS mO "
+      "LEFT OUTER JOIN memo AS m "
+      "ON mO.memoId = m.id");
+    
     List<Memo> list = [];
     for (int i = 0; i < maps.length; i++) {
       if (maps[i]['memoId'] != 0) {
@@ -116,7 +118,6 @@ class SQLite {
 
   /** 新規作成したメモ登録用 */
   static Future<void> insertMemo(Memo memo) async {
-    print(memo);
     final Database db = await database;
     /** memo表に登録 */
     await db.rawInsert('INSERT INTO memo(memo, backColor) VALUES (?, ?)', [memo.memo, memo.backColor]);
@@ -131,7 +132,7 @@ class SQLite {
     final Database db = await database;
     // リストを取得
     final List<Map<String, dynamic>> maps = await db.rawQuery("SELECT MAX(id) FROM memo");
-    int memoId = maps[0]['id'];
+    int memoId = maps[0]['MAX(id)'];
     return memoId;
   }
 

@@ -29,11 +29,11 @@ class MyColor{
       200 : Color(0xff6c9bd2),//ヒヤシンス
       300 : Color(0xffa0d8ef),//スカイブルー
       400 : Color(0xffea553a),
-      500 : Color(0xffee7800),
-      600 : Color(0xfff6bfbc),
+      500 : Color(0xfff19072),
+      600 : Color(0xff001e43),
       700 : Color(0xffd3cfd9),
       800 : Color(0xff895b8a),
-      900 : Color(0xff001e43),
+      900 : Color(0xfff6bfbc),
     },
   );
 }

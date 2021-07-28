@@ -3,16 +3,35 @@ import 'package:flutter/material.dart';
 import 'package:tag_memo/customWidget/husenContainer.dart';
 import "dart:async";
 
+// ignore: must_be_immutable
 class ReorderableGridView extends StatefulWidget {
-  int crossAxisCount = 3;
-  double axisSpacing = 4.0;
+  /// 列の数
+  final int crossAxisCount;
+  /// 付箋と付箋の間の隙間
+  final double axisSpacing;
+  /// アイテム
   List<Widget> children = [];
+  /// 入れ替え後返して欲しい配列データを入れる。キーとか
+  List<dynamic> callbackData = [];
+  /// 入れ替え後callbackDataを親へ渡す
+  Function(List<dynamic>) callback;
+  /// ジェスチャー類
+  Function(int index) onTap;
+  Function(int index, LongPressStartDetails details) onLongPressStart;
+  Function(int index, LongPressMoveUpdateDetails details) onLongPressMoveUpdate;
+  Function(int index, int moved, LongPressEndDetails details) onLongPressEnd;
 
   ReorderableGridView({
     Key key,
-    this.crossAxisCount,
-    this.axisSpacing,
-    this.children,
+    this.crossAxisCount = 3,
+    this.axisSpacing = 4.0,
+    @required this.children,
+    @required this.callbackData,
+    this.callback,
+    this.onTap,
+    this.onLongPressStart,
+    this.onLongPressMoveUpdate,
+    this.onLongPressEnd,
   }) : super(key: key);
 
   @override
@@ -21,13 +40,13 @@ class ReorderableGridView extends StatefulWidget {
 
 class ReorderableGridViewState extends State<ReorderableGridView> {
   final AsyncMemoizer memoizer = AsyncMemoizer();
-  /** グリッドビューの高さ */
+  /// グリッドビューの高さ
   double wigetHeight;
-  /** グリッドアイテムの大きさ */
+  /// グリッドアイテムの大きさ
   double gredSize;
-  /** アイテムのPosition */
+  /// アイテムのPosition
   List<Offset> fixedPosition = [];
-  /** previewに必要なあれこれ */
+  /// previewに必要なあれこれ
   bool flg = true;
   Offset startPosition = Offset(0.0, 0.0);
   double top = 0;
@@ -37,6 +56,7 @@ class ReorderableGridViewState extends State<ReorderableGridView> {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
+      /** グリッドサイズ */
       gredSize = (constraints.maxWidth - widget.axisSpacing * (widget.crossAxisCount - 1)) / widget.crossAxisCount;
       /** 余裕をもってスクロールできるように設定 */
       wigetHeight = ((widget.children.length ~/ widget.crossAxisCount * gredSize) + widget.children.length ~/ widget.crossAxisCount * widget.axisSpacing) + gredSize * 2;
@@ -51,23 +71,27 @@ class ReorderableGridViewState extends State<ReorderableGridView> {
       /** 各アイテムのPositionを設定 */
       fixedPosition = [];
       for (int index = 0; index < widget.children.length; index++) {
-        fixedPosition.add(Offset((index % widget.crossAxisCount * gredSize) + index % widget.crossAxisCount * widget.axisSpacing, (index ~/ widget.crossAxisCount * gredSize) + index ~/ widget.crossAxisCount * widget.axisSpacing));
+        fixedPosition.add(Offset(
+          (index % widget.crossAxisCount * gredSize) + index % widget.crossAxisCount * widget.axisSpacing, 
+          (index ~/ widget.crossAxisCount * gredSize) + index ~/ widget.crossAxisCount * widget.axisSpacing
+        ));
       }
-
       /** グリッドビュー */
-      return SingleChildScrollView(
+        return SingleChildScrollView(
           child: Container(
-        height: wigetHeight,
-        /** プレビュー用アイテムが一番上にするためStackを二重にする */
-        child: Stack(children: [
-          /** アイテム */
-          Stack(
-            children: List.generate(widget.children.length, (index) {
-              return Positioned(
+            height: wigetHeight,
+            /** プレビュー用アイテムが一番上にするためStackを二重にする */
+            child: Stack(children: [
+              /** アイテム */
+              Stack(children: List.generate(widget.children.length, (index) {
+                return Positioned(
                   top: fixedPosition[index].dy,
                   left: fixedPosition[index].dx,
                   child: GestureDetector(
-                    onLongPressStart: (LongPressStartDetails details) {
+                    onTap: (){
+                      widget.onTap(index);
+                    },
+                    onLongPressStart: (LongPressStartDetails details) async {
                       /** 空のアイテムの時は後の入れ替え処理をしないようにする */
                       if (widget.children[index] == null){
                         setState(() => flg = false);
@@ -85,7 +109,7 @@ class ReorderableGridViewState extends State<ReorderableGridView> {
                         });
                       }
                     },
-                    onLongPressMoveUpdate: (LongPressMoveUpdateDetails details) {
+                    onLongPressMoveUpdate: (LongPressMoveUpdateDetails details) async {
                       if(flg){
                         setState(() {
                           top = fixedPosition[index].dy + details.localPosition.dy - startPosition.dy;
@@ -110,37 +134,56 @@ class ReorderableGridViewState extends State<ReorderableGridView> {
                           if (moved >= widget.children.length) {
                             for (int i = widget.children.length; i <= moved; i++) {
                               widget.children = listAddAt(widget.children, i, null);
+                              widget.callbackData = listAddAt(widget.callbackData, i, null);
                               fixedPosition = listAddAt(fixedPosition, i, Offset((i % widget.crossAxisCount * gredSize) + i % widget.crossAxisCount * widget.axisSpacing, (i ~/ widget.crossAxisCount * gredSize) + i ~/ widget.crossAxisCount * widget.axisSpacing));
                             }
                           }
                           /** 入れ替え */
+                          var cData = widget.callbackData[index];
                           widget.children[index] = widget.children[moved];
+                          widget.callbackData[index] = widget.callbackData[moved];
                           widget.children[moved] = previewItem;
+                          widget.callbackData[moved] = cData;
+                          /** 末尾の空白を消す */
                           widget.children = endNullDelete(widget.children);
+                          widget.callbackData = endNullDelete(widget.callbackData);
                           /** プレビュー用アイテムを画面外に飛ばす */
                           previewItem = null;
                           top = -gredSize;
                           left = -gredSize;
                         });
+                        /** callbackDataを親に返す */
+                        widget.callback(widget.callbackData);
                       }
                     },
                     /** アイテム */
                     child: Container(width: gredSize, height: gredSize, child: widget.children[index]),
-                  ));
-            }),
-          ),
-          /** プレビュー用アイテム */
-          Positioned(
-            top: top,
-            left: left,
-            child: Container(height: gredSize, width: gredSize, decoration: BoxDecoration(boxShadow: previewItem == null ? null : [BoxShadow(color: Colors.black12, blurRadius: 10.0, spreadRadius: 1.0, offset: Offset(5, 5))]), child: previewItem),
-          ),
-        ]),
-      ));
+                  )
+                );
+              })),
+              /** プレビュー用アイテム */
+              Positioned(
+                top: top,
+                left: left,
+                child: Container(
+                  height: gredSize, width: gredSize, 
+                  decoration: BoxDecoration(
+                    boxShadow: previewItem == null ? null : [BoxShadow(
+                      color: Colors.black12, 
+                      blurRadius: 10.0, 
+                      spreadRadius: 1.0, 
+                      offset: Offset(5, 5)
+                    )]), 
+                  child: previewItem
+                ),
+              ),
+            ]),
+          )
+        );
     });
   }
 
-  List<dynamic> listAddAt(List<dynamic> list, int index, dynamic item) {
+  static List<dynamic> listAddAt(List<dynamic> list, int index, dynamic item) {
     /** アイテム配列サイズを超えるならnullを入れて拡張 */
     if (index >= list.length) {
       for (int i = list.length; i <= index; i++) {
