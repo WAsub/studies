@@ -18,12 +18,11 @@ class ReorderableHusenView extends StatefulWidget {
   /// 付箋の色
   List<HusenColor> colors = [];
   /// 入れ替え後付箋の色とcallbackDataを親へ渡す
-  Function(List<HusenColor>, dynamic) callback;
+  Function(List<HusenColor> colors, dynamic callbk) callback;
   /// ジェスチャー類
   Function(int index) onTap;
 
   ReorderableHusenView({
-    Key key,
     this.crossAxisCount = 3,
     this.axisSpacing = 4.0,
     @required this.children,
@@ -31,7 +30,7 @@ class ReorderableHusenView extends StatefulWidget {
     this.colors,
     this.callback,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   ReorderableHusenViewState createState() => ReorderableHusenViewState();

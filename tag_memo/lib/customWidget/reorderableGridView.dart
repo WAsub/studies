@@ -22,7 +22,6 @@ class ReorderableGridView extends StatefulWidget {
   Function(int index, int moved, LongPressEndDetails details) onLongPressEnd;
 
   ReorderableGridView({
-    Key key,
     this.crossAxisCount = 3,
     this.axisSpacing = 4.0,
     @required this.children,
@@ -32,7 +31,7 @@ class ReorderableGridView extends StatefulWidget {
     this.onLongPressStart,
     this.onLongPressMoveUpdate,
     this.onLongPressEnd,
-  }) : super(key: key);
+  });
 
   @override
   ReorderableGridViewState createState() => ReorderableGridViewState();
