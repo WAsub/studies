@@ -6,7 +6,6 @@ import 'package:tag_memo/data/sqlite.dart';
 import 'package:tag_memo/editingMemo.dart';
 import 'package:tag_memo/theme/color.dart';
 import 'customWidget/customText.dart';
-import 'customWidget/reorderableGridView.dart';
 import 'customWidget/reorderableHusenView.dart';
 import 'setTheme.dart';
 import 'theme/dynamic_theme.dart';
@@ -75,12 +74,13 @@ class _TagMemoState extends State<TagMemo> {
   }
   @override
   void initState() {
-    memoizer.runOnce(() async => loading());
+    // memoizer.runOnce(() async => loading());
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
+    memoizer.runOnce(() async => loading());
     /** 画面 */
     return Scaffold(
       appBar: AppBar(title: Text(widget.title),),
@@ -113,16 +113,9 @@ class _TagMemoState extends State<TagMemo> {
         deviceWidth = constraints.maxWidth;
 
         return Stack(children: [
-            ReorderableHusenView(
-              colors: List.generate(_previewList.length, (index) {
-                /** 空白ならnull */
-                if(_previewList[index] == null){ return null;}
-                /** アイテムがあるなら色をセット */
-                Color color = themeColor[_previewList[index].backColor];
-                Color backSide = Color.fromARGB(255, color.red-50, color.green-50, color.blue-50);
-                return HusenColor(color: color, backSideColor: backSide);
-              }),
-              children: List.generate(_previewList.length, (index) {
+            ReorderableHusenView.builder(
+              itemcount: _previewList.length,
+              itembuilder: (index) {
                 /** 空白ならnull */
                 if(_previewList[index] == null){
                   return null;
@@ -130,22 +123,21 @@ class _TagMemoState extends State<TagMemo> {
                 /** アイテムがあるならプレビュー表示 */
                 return CustomText(
                   _previewList[index].memoPreview,
-                  overflow: TextOverflow.ellipsis, maxLines: 4,
+                  overflow: TextOverflow.ellipsis, maxLines: 3,
                 );
-              }),
-              callbackData: _previewList,
-              onTap: (index){
-                if(_previewList[index] == null){ return;}
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) {
-                    // メモ編集画面へ
-                    return EditingMemo(memoId: _previewList[index].memoId,);
-                  }),
-                ).then((value) async {
-                  loading();
-                });
               },
-              callback: (colors, callbacData) async {
+              keybuilder: (index){
+                return _previewList[index];
+              },
+              colorsbuilder: (index){
+                /** 空白ならnull */
+                if(_previewList[index] == null){ return null;}
+                /** アイテムがあるなら色をセット */
+                Color color = themeColor[_previewList[index].backColor];
+                Color backSide = Color.fromARGB(255, color.red-50, color.green-50, color.blue-50);
+                return HusenColor(color: color, backSideColor: backSide);
+              },
+              onReorder: (callbacData) async {
                 List<int> memoIds = [];
                 for(Memo cblist in callbacData){
                   if(cblist == null){
@@ -156,6 +148,17 @@ class _TagMemoState extends State<TagMemo> {
                 }
                 await SQLite.renewMemoOrder(memoIds);
                 loading();
+              },
+              onTap: (index){
+                if(_previewList[index] == null){ return;}
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) {
+                    // メモ編集画面へ
+                    return EditingMemo(memoId: _previewList[index].memoId,);
+                  }),
+                ).then((value) async {
+                  loading();
+                });
               },
             ),
             /** ロード */

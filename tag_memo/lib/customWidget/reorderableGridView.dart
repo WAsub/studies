@@ -1,37 +1,57 @@
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
-import 'package:tag_memo/customWidget/husenContainer.dart';
-import "dart:async";
 
 // ignore: must_be_immutable
 class ReorderableGridView extends StatefulWidget {
   /// 列の数
   final int crossAxisCount;
-  /// 付箋と付箋の間の隙間
+  /// アイテム間の隙間
   final double axisSpacing;
+  /// アイテム数
+  int itemcount;
   /// アイテム
   List<Widget> children = [];
+  Widget Function(int) itembuilder;
   /// 入れ替え後返して欲しい配列データを入れる。キーとか
-  List<dynamic> callbackData = [];
-  /// 入れ替え後callbackDataを親へ渡す
-  Function(List<dynamic>) callback;
+  List<dynamic> keys = [];
+  dynamic Function(int) keybuilder;
+  /// 入れ替え後keysを親へ渡す
+  Function(dynamic keys) onReorder;
   /// ジェスチャー類
   Function(int index) onTap;
-  Function(int index, LongPressStartDetails details) onLongPressStart;
-  Function(int index, LongPressMoveUpdateDetails details) onLongPressMoveUpdate;
-  Function(int index, int moved, LongPressEndDetails details) onLongPressEnd;
 
-  ReorderableGridView({
+  ReorderableGridView.builder({
+    crossAxisCount = 3,
+    axisSpacing = 4.0,
+    @required itembuilder,
+    @required itemcount,
+    @required keybuilder,
+    onReorder,
+    onTap,
+    key,
+  }) : this._init(
+    crossAxisCount: crossAxisCount,
+    axisSpacing: axisSpacing,
+    children: List.generate(itemcount, (index){
+      return itembuilder(index);
+    }),
+    keys: List.generate(itemcount, (index){
+      return keybuilder(index);
+    }),
+    onReorder:onReorder,
+    onTap:onTap,
+    key: key,
+  );
+
+  ReorderableGridView._init({
     this.crossAxisCount = 3,
     this.axisSpacing = 4.0,
     @required this.children,
-    @required this.callbackData,
-    this.callback,
+    @required this.keys,
+    this.onReorder,
     this.onTap,
-    this.onLongPressStart,
-    this.onLongPressMoveUpdate,
-    this.onLongPressEnd,
-  });
+    Key key,
+  }) : super(key: key);
 
   @override
   ReorderableGridViewState createState() => ReorderableGridViewState();
@@ -133,26 +153,26 @@ class ReorderableGridViewState extends State<ReorderableGridView> {
                           if (moved >= widget.children.length) {
                             for (int i = widget.children.length; i <= moved; i++) {
                               widget.children = listAddAt(widget.children, i, null);
-                              widget.callbackData = listAddAt(widget.callbackData, i, null);
+                              widget.keys = listAddAt(widget.keys, i, null);
                               fixedPosition = listAddAt(fixedPosition, i, Offset((i % widget.crossAxisCount * gredSize) + i % widget.crossAxisCount * widget.axisSpacing, (i ~/ widget.crossAxisCount * gredSize) + i ~/ widget.crossAxisCount * widget.axisSpacing));
                             }
                           }
                           /** 入れ替え */
-                          var cData = widget.callbackData[index];
+                          var cData = widget.keys[index];
                           widget.children[index] = widget.children[moved];
-                          widget.callbackData[index] = widget.callbackData[moved];
+                          widget.keys[index] = widget.keys[moved];
                           widget.children[moved] = previewItem;
-                          widget.callbackData[moved] = cData;
+                          widget.keys[moved] = cData;
                           /** 末尾の空白を消す */
                           widget.children = endNullDelete(widget.children);
-                          widget.callbackData = endNullDelete(widget.callbackData);
+                          widget.keys = endNullDelete(widget.keys);
                           /** プレビュー用アイテムを画面外に飛ばす */
                           previewItem = null;
                           top = -gredSize;
                           left = -gredSize;
                         });
-                        /** callbackDataを親に返す */
-                        widget.callback(widget.callbackData);
+                        /** keysを親に返す */
+                        widget.onReorder(widget.keys);
                       }
                     },
                     /** アイテム */
