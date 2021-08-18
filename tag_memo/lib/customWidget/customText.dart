@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-
 class CustomText extends StatelessWidget {
   String data;
   TextStyle style;
@@ -20,13 +19,11 @@ class CustomText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double widgetHeight;
-    double widgetWidth;
-    List<String> datas = this.data.split('\n');
-
     return LayoutBuilder(builder: (context, constraints) {
-        widgetHeight = constraints.maxHeight;
-        widgetWidth = constraints.maxWidth;
+      double widgetHeight = constraints.maxHeight;
+      double widgetWidth = constraints.maxWidth;
+      List<String> datas = this.data.split('\n');
+      this.maxLines = this.maxLines == null ? datas.length : this.maxLines;
 
         return Container(
           height: widgetHeight, width: widgetWidth,
@@ -34,13 +31,13 @@ class CustomText extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: datas.length <= this.maxLines ?
             List.generate(datas.length, (index) {
-              return Text(datas[index], overflow: this.overflow,);
+              return Text(datas[index], overflow: this.overflow, style: this.style, textAlign: this.textAlign, textDirection: this.textDirection);
             }) : 
             List.generate(this.maxLines+1, (index) {
               if(index == this.maxLines){
-                return Text("...");
+                return Text("...", style: this.style, textAlign: this.textAlign, textDirection: this.textDirection);
               }
-              return Text(datas[index], overflow: this.overflow,);
+              return Text(datas[index], overflow: this.overflow, style: this.style, textAlign: this.textAlign, textDirection: this.textDirection);
             }),
           ),
         );

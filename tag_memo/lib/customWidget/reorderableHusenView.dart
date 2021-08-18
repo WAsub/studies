@@ -3,25 +3,68 @@ import 'package:flutter/material.dart';
 import 'package:tag_memo/customWidget/husenContainer.dart';
 import "dart:async";
 
+// ignore: must_be_immutable
 class ReorderableHusenView extends StatefulWidget {
-  /** 列の数 */
-  int crossAxisCount = 3;
-  /** 付箋と付箋の間の隙間 */
-  double axisSpacing = 4.0;
-  /** アイテム */
+  /// 列の数
+  final int crossAxisCount;
+  /// 付箋と付箋の間の隙間
+  final double axisSpacing;
+  /// アイテム数
+  int itemcount;
+  /// アイテム
   List<Widget> children = [];
-  /** 入れ替え後返して欲しい配列データを入れる */
-  List<dynamic> callbackData = [];
-  /** 入れ替え後keyDataを親へ渡す */
-  Function(dynamic) callback;
+  Widget Function(int) itembuilder;
+  /// 入れ替え後返して欲しい配列データを入れる。キーとか
+  List<dynamic> keys = [];
+  dynamic Function(int) keybuilder;
+  /// 付箋の色
+  List<HusenColor> colors = [];
+  HusenColor Function(int) colorsbuilder;
+  /// 入れ替え後keysを親へ渡す
+  Function(dynamic keys) onReorder;
+  /// ジェスチャー類
+  Function(int index) onTap;
 
-  ReorderableHusenView({
-    Key key,
-    this.crossAxisCount,
-    this.axisSpacing,
+  ReorderableHusenView.builder({
+    crossAxisCount = 3,
+    axisSpacing = 4.0,
+    @required itembuilder,
+    @required itemcount,
+    @required keybuilder,
+    colorsbuilder,
+    onReorder,
+    onTap,
+    key,
+  }) : this._init(
+    crossAxisCount: crossAxisCount,
+    axisSpacing: axisSpacing,
+    children: List.generate(itemcount, (index){
+      return itembuilder(index);
+    }),
+    keys: List.generate(itemcount, (index){
+      return keybuilder(index);
+    }),
+    colors: List.generate(itemcount, (index){
+      if(colorsbuilder == null){
+        Color color = Colors.blue[200];
+        return HusenColor(color: color,backSideColor: Color.fromARGB(255, color.red-50, color.green-50, color.blue-50));
+      }
+      return colorsbuilder(index);
+    }),
+    onReorder:onReorder,
+    onTap:onTap,
+    key: key,
+  );
+
+  ReorderableHusenView._init({
+    this.crossAxisCount = 3,
+    this.axisSpacing = 4.0,
     @required this.children,
-    @required this.callbackData,
-    this.callback,
+    @required this.keys,
+    this.colors,
+    this.onReorder,
+    this.onTap,
+    Key key,
   }) : super(key: key);
 
   @override
@@ -30,28 +73,27 @@ class ReorderableHusenView extends StatefulWidget {
 
 class ReorderableHusenViewState extends State<ReorderableHusenView> {
   final AsyncMemoizer memoizer = AsyncMemoizer();
-  /** グリッドビューの高さ */
+  /// グリッドビューの高さ
   double wigetHeight;
-  /** グリッドアイテムの大きさ */
+  /// グリッドアイテムの大きさ
   double gredSize;
-  /** アイテムのPosition */
+  /// アイテムのPosition
   List<Offset> fixedPosition = [];
-  /** 付箋ウィジェットの制御 */
+  /// 付箋ウィジェットの制御
   List<bool> mekuriflgs = [];
-  /** previewに必要なあれこれ */
+  /// previewに必要なあれこれ
   bool flg = true;
   Offset startPosition = Offset(0.0, 0.0);
   double top = 0;
   double left = 0;
   Widget previewItem;
+  HusenColor previewColor;
 
   @override
   Widget build(BuildContext context) {
-    /** デフォルト値 */
-    widget.crossAxisCount = widget.crossAxisCount==null ? 3 : widget.crossAxisCount;
-    widget.axisSpacing = widget.axisSpacing==null ? 6.0 : widget.axisSpacing;
     /** ウィジェット */
     return LayoutBuilder(builder: (context, constraints) {
+      /** グリッドサイズ */
       gredSize = (constraints.maxWidth - widget.axisSpacing * (widget.crossAxisCount - 1)) / widget.crossAxisCount;
       /** 余裕をもってスクロールできるように設定 */
       wigetHeight = ((widget.children.length ~/ widget.crossAxisCount * gredSize) + widget.children.length ~/ widget.crossAxisCount * widget.axisSpacing) + gredSize * 2;
@@ -73,20 +115,21 @@ class ReorderableHusenViewState extends State<ReorderableHusenView> {
         ));
         mekuriflgs.add(false);
       }
-      /** グリッドビュー */
-      return SingleChildScrollView(
+        /** グリッドビュー */
+        return SingleChildScrollView(
           child: Container(
-        height: wigetHeight,
-        /** プレビュー用アイテムが一番上にするためStackを二重にする */
-        child: Stack(children: [
-          /** アイテム */
-          Stack(
-            children: List.generate(widget.children.length, (index) {
-              return Positioned(
+            height: wigetHeight,
+            /** プレビュー用アイテムが一番上にするためStackを二重にする */
+            child: Stack(children: [
+              /** アイテム */
+              Stack(children: List.generate(widget.children.length, (index) {
+                return Positioned(
                   top: fixedPosition[index].dy,
                   left: fixedPosition[index].dx,
                   child: GestureDetector(
-                    // onTap: widget.onTap(),
+                    onTap: (){
+                      widget.onTap(index);
+                    },
                     onLongPressStart: (LongPressStartDetails details) {
                       /** 空のアイテムの時は後の入れ替え処理をしないようにする */
                       if (widget.children[index] == null){
@@ -102,6 +145,7 @@ class ReorderableHusenViewState extends State<ReorderableHusenView> {
                           left = fixedPosition[index].dx + details.localPosition.dx - startPosition.dx;
                           /** プレビュー用アイテムに移動するアイテムを入れて */
                           previewItem = widget.children[index];
+                          previewColor = widget.colors[index];
                           /** 元の場所は見えないようにする */
                           widget.children[index] = null;
                         });
@@ -132,7 +176,8 @@ class ReorderableHusenViewState extends State<ReorderableHusenView> {
                           if (moved >= widget.children.length) {
                             for (int i = widget.children.length; i <= moved; i++) {
                               widget.children = listAddAt(widget.children, i, null);
-                              widget.callbackData = listAddAt(widget.callbackData, i, null);
+                              widget.colors = listAddAt(widget.colors, i, null);
+                              widget.keys = listAddAt(widget.keys, i, null);
                               fixedPosition = listAddAt(fixedPosition, i, Offset((i % widget.crossAxisCount * gredSize) + i % widget.crossAxisCount * widget.axisSpacing, (i ~/ widget.crossAxisCount * gredSize) + i ~/ widget.crossAxisCount * widget.axisSpacing));
                               mekuriflgs = listAddAt(mekuriflgs, i, false);
                             }
@@ -140,16 +185,20 @@ class ReorderableHusenViewState extends State<ReorderableHusenView> {
                           /** 入れ替え先の付箋をめくる */
                           mekuriflgs[moved] = true;
                           /** 入れ替え */
-                          var cData = widget.callbackData[index];
+                          var cData = widget.keys[index];
                           widget.children[index] = widget.children[moved];
-                          widget.callbackData[index] = widget.callbackData[moved];
+                          widget.colors[index] = widget.colors[moved];
+                          widget.keys[index] = widget.keys[moved];
                           widget.children[moved] = previewItem;
-                          widget.callbackData[moved] = cData;
+                          widget.colors[moved] = previewColor;
+                          widget.keys[moved] = cData;
                           /** 末尾の空白を消す */
                           widget.children = endNullDelete(widget.children);
-                          widget.callbackData = endNullDelete(widget.callbackData);
+                          widget.colors = endNullDelete(widget.colors);
+                          widget.keys = endNullDelete(widget.keys);
                           /** プレビュー用アイテムを画面外に飛ばす */
                           previewItem = null;
+                          previewColor = null;
                           top = -gredSize;
                           left = -gredSize;
                           /** 元の場所付箋のめくりを戻す */
@@ -158,8 +207,8 @@ class ReorderableHusenViewState extends State<ReorderableHusenView> {
                         /** 一瞬待ってから付箋のめくりを戻す */
                         await new Future.delayed(new Duration(milliseconds: 110));
                         setState(() => mekuriflgs[moved] = false);
-                        /** keyDataを親に返す */
-                        widget.callback(widget.callbackData);
+                        /** keysを親に返す */
+                        widget.onReorder(widget.keys);
                       }
                     },
                     /** アイテム
@@ -168,39 +217,44 @@ class ReorderableHusenViewState extends State<ReorderableHusenView> {
                     child: Container(
                       width: gredSize, height: gredSize, 
                       color: Colors.transparent,
-                      child: husenOrNull(widget.children[index], mekuriflgs[index])
+                      child: husenOrNull(widget.children[index], mekuriflgs[index], widget.colors[index])
                     ),
-                  ));
-            }),
-          ),
-          /** プレビュー用アイテム */
-          Positioned(
-            top: top,
-            left: left,
-            child: Container(
-              decoration: BoxDecoration(
-                boxShadow: previewItem == null ? null : [BoxShadow(
-                  color: Colors.black12, 
-                  blurRadius: 10.0, 
-                  spreadRadius: 1.0, 
-                  offset: Offset(5, 5))
-                ]), 
-              child: HusenContainer(
-                mekuriFlg: true,
-                child: Container(width: gredSize, height: gredSize, child: previewItem),
-              )
-            ),
-          ),
-        ]),
-      ));
+                  )
+                );
+              })),
+              /** プレビュー用アイテム */
+              Positioned(
+                top: top,
+                left: left,
+                child: Container(
+                  decoration: BoxDecoration(
+                    boxShadow: previewItem == null ? null : [BoxShadow(
+                      color: Colors.black12, 
+                      blurRadius: 10.0, 
+                      spreadRadius: 1.0, 
+                      offset: Offset(5, 5))
+                    ]), 
+                  child: HusenContainer(
+                    color: previewColor == null ? null : previewColor.color,
+                    backSideColor: previewColor == null ? null : previewColor.backSideColor,
+                    mekuriFlg: true,
+                    child: Container(width: gredSize, height: gredSize, child: previewItem),
+                  )
+                ),
+              ),
+            ]),
+          )
+        );
     });
   }
 
-  dynamic husenOrNull(Widget item, bool mekuriflgs){
+  dynamic husenOrNull(Widget item, bool mekuriflgs, HusenColor color){
     if(item == null){
       return null;
     }else{
       return HusenContainer(
+        color: color.color,
+        backSideColor: color.backSideColor,
         mekuriFlg: mekuriflgs,
         child: Container(width: gredSize, height: gredSize, child: item),
       );
