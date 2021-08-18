@@ -1,5 +1,6 @@
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'data/sqlite.dart';
 import 'theme/color.dart';
@@ -33,6 +34,10 @@ class EditingMemoState extends State<EditingMemo> {
   /** 付箋色 */
   Color backColor = Colors.white;
   Color nextColor = Colors.white;
+  /** フォントスタイル */
+  Map<String,Color> fontColors = {"ブラック": Colors.black, "ダークグレイ": Colors.black45, "ホワイト": Colors.white};
+  double fontSize = 16;
+  Color fontColor = Colors.black;
   int next(int index){
     int nextIndex = (((index + 100) ~/ 100) % 10) * 100;
     if(nextIndex==0){
@@ -53,10 +58,15 @@ class EditingMemoState extends State<EditingMemo> {
     }else{
       _memo = await SQLite.getMemo(widget.memoId);
     }
-    /**  */
+    /** メモデータ */
     controller = TextEditingController(text: _memo.memo);
+    /** カラー */
     backColor = themeColor[_memo.backColor];
     nextColor = themeColor[next(_memo.backColor)];
+    /** フォント */
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    fontSize = (prefs.getDouble("fontSize") ?? 16.0);
+    fontColor = fontColors[(prefs.getString("fontColor") ?? "ブラック")];
     /** グルグル終わり */
     setState(() => cpi = null);
   }
@@ -64,7 +74,6 @@ class EditingMemoState extends State<EditingMemo> {
   @override
   void initState() {
     memoizer.runOnce(() async => loading());
-    // loading();
     super.initState();
   }
 
@@ -76,7 +85,7 @@ class EditingMemoState extends State<EditingMemo> {
         actions: [
           widget.memoId == 0 ? Container() :
           IconButton(
-            icon: Icon(Icons.restore_from_trash), 
+            icon: Icon(Icons.delete), 
             onPressed: () async {
               await SQLite.deleteMemo(_memo.memoId);
               Navigator.pop(context,);
@@ -85,10 +94,11 @@ class EditingMemoState extends State<EditingMemo> {
         ],
       ),
       body: LayoutBuilder(builder: (context, constraints) {
-          deviceHeight = constraints.maxHeight;
-          deviceWidth = constraints.maxWidth;
+        deviceHeight = constraints.maxHeight;
+        deviceWidth = constraints.maxWidth;
 
           return Stack(children: [
+            /** メモ帳 */
             Container(
               height: deviceHeight,
               color: backColor,
@@ -98,26 +108,19 @@ class EditingMemoState extends State<EditingMemo> {
                   height: deviceHeight-48,
                   child: new TextField(
                     controller: controller,
+                    style: TextStyle(fontSize: fontSize, color: fontColor),
                     maxLines: 500,
                     decoration: new InputDecoration(
-                      // enabledBorder: OutlineInputBorder(
-                      //   borderSide: BorderSide(
-                      //     width: 1.5,
-                      //     color: Theme.of(context).accentColor,
-                      // ),),
-                      // focusedBorder: OutlineInputBorder(
-                      //   borderSide: BorderSide(
-                      //     width: 1.5,
-                      //     color: Theme.of(context).accentColor,
-                      // ),),
                       border: InputBorder.none,
                       hintText: 'メモを書く',
+                      hintStyle: TextStyle(color: Colors.black26)
                     ),
                     keyboardType: TextInputType.multiline,
                   ),
                 ),
               ),
             ),
+            /** 下部のアクションバー */
             Positioned(
               bottom: 0,
               child: Container(
@@ -128,6 +131,7 @@ class EditingMemoState extends State<EditingMemo> {
                   child: Scaffold(
                     backgroundColor: Colors.transparent,
                     floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
+                    /** 保存ボタン */
                     floatingActionButton: FloatingActionButton(
                       child: Icon(Icons.check),
                       backgroundColor: Theme.of(context).accentColor,
@@ -151,25 +155,26 @@ class EditingMemoState extends State<EditingMemo> {
                         ),
                       ),
                       child: new Row(children: [
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              primary: Theme.of(context).primaryColor,
-                              side: BorderSide(
-                                color: nextColor,
-                                width: 5,
-                                style: BorderStyle.solid,
-                              ),
-                              shape: CircleBorder(),
+                        /** 付箋の色を変えるボタン */
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            primary: Theme.of(context).primaryColor,
+                            side: BorderSide(
+                              color: nextColor, // 次の色
+                              width: 5,
+                              style: BorderStyle.solid,
                             ),
-                            child: null,
-                            onPressed: (){
-                              setState(() {
-                                _memo.backColor = next(_memo.backColor);
-                                backColor = themeColor[_memo.backColor];
-                                nextColor = themeColor[next(_memo.backColor)];
-                              });
-                            }, 
+                            shape: CircleBorder(),
                           ),
+                          child: null,
+                          onPressed: (){
+                            setState(() {
+                              _memo.backColor = next(_memo.backColor);
+                              backColor = themeColor[_memo.backColor];
+                              nextColor = themeColor[next(_memo.backColor)];
+                            });
+                          }, 
+                        ),
                       ]),
                     ),
                   ),
