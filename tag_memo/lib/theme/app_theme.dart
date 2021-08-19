@@ -20,4 +20,13 @@ class AppTheme {
       brightness: Brightness.light,
     );
   }
+  static ThemeData theme_pastel() {
+    return ThemeData(
+      primaryColor: MyColor.pastel[100],
+      accentColor: MyColor.pastel[200],
+      selectedRowColor: MyColor.pastel[300],
+      primarySwatch: MyColor.pastel,
+      brightness: Brightness.light,
+    );
+  }
 }

@@ -5,14 +5,17 @@ class ThemeType {
 
   static const String _ROSE_VALUE = 'ROSE';
   static const String _SKY_VALUE = 'SKY';
+  static const String _PASTEL_VALUE = 'PASTEL';
 
   static const ThemeType ROSE = ThemeType(_ROSE_VALUE);
   static const ThemeType SKY = ThemeType(_SKY_VALUE);
+  static const ThemeType PASTEL = ThemeType(_PASTEL_VALUE);
 
   static List<ThemeType> values() {
     return [
       ThemeType.ROSE,
       ThemeType.SKY,
+      ThemeType.PASTEL,
     ];
   }
 
