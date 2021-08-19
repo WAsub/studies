@@ -144,8 +144,8 @@ class _TagMemoState extends State<TagMemo> {
                 if(_previewList[index] == null){ return null;}
                 /** アイテムがあるなら色をセット */
                 Color color = themeColor[_previewList[index].backColor];
-                Color backSide = Color.fromARGB(255, color.red-50, color.green-50, color.blue-50);
-                return HusenColor(color: color, backSideColor: backSide);
+                HSVColor backSide = HSVColor.fromColor(color);
+                return HusenColor(color: color, backSideColor: backSide.withValue(backSide.value-0.15).toColor());
               },
               onReorder: (callbacData) async {
                 List<int> memoIds = [];
