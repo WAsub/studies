@@ -1,6 +1,7 @@
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tag_memo/customWidget/husenContainer.dart';
 
 import 'data/sqlite.dart';
 import 'theme/color.dart';
@@ -27,24 +28,16 @@ class EditingMemoState extends State<EditingMemo> {
   final AsyncMemoizer memoizer = AsyncMemoizer();
   /** テーマカラー */
   MaterialColor themeColor = MyColor.rose;
+  Map<int, int> colorIndex = {0:50, 1:100, 2:200, 3:300, 4:400, 5:500, 6:600, 7:700, 8:800, 9:900};
+  bool colorFlg = false;
   /** メモプレビューリスト */
   Memo _memo;
   /** テキストコントローラ */
   TextEditingController controller = TextEditingController();
-  /** 付箋色 */
-  Color backColor = Colors.white;
-  Color nextColor = Colors.white;
   /** フォントスタイル */
   Map<String,Color> fontColors = {"ブラック": Colors.black, "ダークグレイ": Colors.black45, "ホワイト": Colors.white};
   double fontSize = 16;
   Color fontColor = Colors.black;
-  int next(int index){
-    int nextIndex = (((index + 100) ~/ 100) % 10) * 100;
-    if(nextIndex==0){
-      return 50;
-    }
-    return nextIndex;
-  }
 
   /** ローディング処理 */
   Future<void> loading() async {
@@ -60,9 +53,6 @@ class EditingMemoState extends State<EditingMemo> {
     }
     /** メモデータ */
     controller = TextEditingController(text: _memo.memo);
-    /** カラー */
-    backColor = themeColor[_memo.backColor];
-    nextColor = themeColor[next(_memo.backColor)];
     /** フォント */
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     fontSize = (prefs.getDouble("fontSize") ?? 16.0);
@@ -101,12 +91,12 @@ class EditingMemoState extends State<EditingMemo> {
             /** メモ帳 */
             Container(
               height: deviceHeight,
-              color: backColor,
+              color: themeColor[_memo.backColor],
               padding: EdgeInsets.only(bottom: 48),
               child: new SingleChildScrollView(
                 child: SizedBox(
                   height: deviceHeight-48,
-                  child: new TextField(
+                  child: TextField(
                     controller: controller,
                     style: TextStyle(fontSize: fontSize, color: fontColor),
                     maxLines: 500,
@@ -127,7 +117,10 @@ class EditingMemoState extends State<EditingMemo> {
                 height: 56,
                 width: deviceWidth,
                 child: GestureDetector(
-                  onTap: () => FocusScope.of(context).unfocus(),
+                  onTap: (){
+                    FocusScope.of(context).unfocus();
+                    setState(() => colorFlg = false);
+                  },
                   child: Scaffold(
                     backgroundColor: Colors.transparent,
                     floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
@@ -154,26 +147,11 @@ class EditingMemoState extends State<EditingMemo> {
                           side: BorderSide(),
                         ),
                       ),
-                      child: new Row(children: [
-                        /** 付箋の色を変えるボタン */
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            primary: Theme.of(context).primaryColor,
-                            side: BorderSide(
-                              color: nextColor, // 次の色
-                              width: 5,
-                              style: BorderStyle.solid,
-                            ),
-                            shape: CircleBorder(),
-                          ),
-                          child: null,
-                          onPressed: (){
-                            setState(() {
-                              _memo.backColor = next(_memo.backColor);
-                              backColor = themeColor[_memo.backColor];
-                              nextColor = themeColor[next(_memo.backColor)];
-                            });
-                          }, 
+                      child: Row(children: [
+                        /** 付箋の色選択ON/OFF */
+                        IconButton(
+                          icon: Icon(Icons.format_color_fill, color: Theme.of(context).selectedRowColor,),
+                          onPressed: () => setState(() => colorFlg = colorFlg ? false : true)
                         ),
                       ]),
                     ),
@@ -181,6 +159,50 @@ class EditingMemoState extends State<EditingMemo> {
                 )
               )
             ),
+            /** 付箋の色選択 */
+            colorFlg ? Positioned(
+              left: 5,
+              bottom: 53,
+              child: Container(
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.grey.withAlpha(153),
+                  border: Border.all(width: 1.5,color: Theme.of(context).selectedRowColor)
+                ),
+                height: 112, width: 290,
+                padding: EdgeInsets.all(10),
+                child: Column(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+                    children: List.generate(5, (index){
+                      Color color = themeColor[colorIndex[index]];
+                      HSVColor backSide = HSVColor.fromColor(color);
+                      return GestureDetector(
+                        onTap: () => setState(() => _memo.backColor = colorIndex[index]),
+                        child: HusenContainer(
+                          height: 40,width: 40, 
+                          color: color,
+                          backSideColor: backSide.withValue(backSide.value-0.15).toColor(),
+                        ),
+                      );
+                    })
+                  ),
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: List.generate(5, (index){
+                      Color color = themeColor[colorIndex[index+5]];
+                      HSVColor backSide = HSVColor.fromColor(color);
+                      return GestureDetector(
+                        onTap: () => setState(() => _memo.backColor = colorIndex[index+5]),
+                        child: HusenContainer(
+                          height: 40,width: 40, 
+                          color: color,
+                          backSideColor: backSide.withValue(backSide.value-0.15).toColor(),
+                        ),
+                      );
+                    })
+                  ),
+                ],),
+              )
+            ) : Container(),
             /** ロード */
             Container(
               alignment: Alignment.topCenter,

@@ -8,6 +8,7 @@ class ThemeColor {
   static Map<ThemeType, MaterialColor> themeMap = {
     ThemeType.ROSE: MyColor.rose,
     ThemeType.SKY: MyColor.sky,
+    ThemeType.PASTEL: MyColor.pastel,
   };
 
   static Future<MaterialColor> getThemeColor() async {

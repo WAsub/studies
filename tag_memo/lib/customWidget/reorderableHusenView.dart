@@ -75,6 +75,7 @@ class ReorderableHusenViewState extends State<ReorderableHusenView> {
   final AsyncMemoizer memoizer = AsyncMemoizer();
   /// グリッドビューの高さ
   double wigetHeight;
+  int imgCount;
   /// グリッドアイテムの大きさ
   double gredSize;
   /// アイテムのPosition
@@ -99,6 +100,9 @@ class ReorderableHusenViewState extends State<ReorderableHusenView> {
       wigetHeight = ((widget.children.length ~/ widget.crossAxisCount * gredSize) + widget.children.length ~/ widget.crossAxisCount * widget.axisSpacing) + gredSize * 2;
       /** ウィジェットのHeightより小さかったらウィジェットのHeightに変える */
       wigetHeight = wigetHeight < constraints.maxHeight ? constraints.maxHeight : wigetHeight;
+      /** 木目の背景を何枚配置するか(A RenderFlex overflowedが出ないようwigetHeightを修正) */
+      imgCount = wigetHeight ~/ (constraints.maxWidth / 8 * 5) + 1;
+      wigetHeight = wigetHeight < (constraints.maxWidth / 8 * 5) * imgCount ? (constraints.maxWidth / 8 * 5) * imgCount : wigetHeight;
       /** SetState時に再設定されるとおかしくなるので最初の一回だけ設定 */
       memoizer.runOnce(() async {
         /** プレビュー用アイテムを画面外に飛ばす */
@@ -121,6 +125,7 @@ class ReorderableHusenViewState extends State<ReorderableHusenView> {
             height: wigetHeight,
             /** プレビュー用アイテムが一番上にするためStackを二重にする */
             child: Stack(children: [
+              Column(children: List.generate(imgCount, (index) => Image.asset("images/Wood_Cedar.jpeg"))),
               /** アイテム */
               Stack(children: List.generate(widget.children.length, (index) {
                 return Positioned(

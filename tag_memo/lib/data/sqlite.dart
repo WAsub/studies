@@ -52,10 +52,8 @@ class SQLite {
           ")",
         );
         // テスト用
-        await db.execute("INSERT INTO memo (memo, backColor) VALUES (\"あいうえおかきくけこさしすせそ\nあいうえお\", 300)");
+        await db.execute("INSERT INTO memo (memo, backColor) VALUES (\"サンプルサンプルサンプルサンプル\nサンプル\", 500)");
         await db.execute("INSERT INTO memoOrder (memoId) VALUES (1)");
-        await db.execute("INSERT INTO memo (memo, backColor) VALUES (\"あいうえおかきくけこさしすせそ\nあいうえお\nあいうえお\nあいうえお\nあいうえお\nあいうえお\", 600)");
-        await db.execute("INSERT INTO memoOrder (memoId) VALUES (2)");
       },
       version: 1,
     );
