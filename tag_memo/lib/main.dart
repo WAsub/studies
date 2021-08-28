@@ -73,10 +73,9 @@ class _TagMemoState extends State<TagMemo> {
     themeColor = await ThemeColor.getBasicAndThemeColor();
     /** プレビューリスト取得 */
     _previewList = await SQLite.getMemoPreview();
-    print(_previewList);
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     fsize = (prefs.getDouble("fontSize") ?? 16.0);
-    fcolor = fontColors[(prefs.getString("fontColor") ?? "ホワイト")];
+    fcolor = fontColors[(prefs.getString("fontColor") ?? "ブラック")];
     /** グルグル終わり */
     setState(() => cpi = null);
   }
