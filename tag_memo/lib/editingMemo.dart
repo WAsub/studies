@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tag_memo/customWidget/husenContainer.dart';
 
+import 'customWidget/deleteDialog.dart';
 import 'data/sqlite.dart';
 import 'theme/color.dart';
 import 'theme/theme_color.dart';
@@ -31,7 +32,7 @@ class EditingMemoState extends State<EditingMemo> {
   Map<int, int> colorIndex = {0:50, 1:100, 2:200, 3:300, 4:400, 5:500, 6:600, 7:700, 8:800, 9:900};
   bool colorFlg = false;
   /** メモプレビューリスト */
-  Memo _memo;
+  Memo _memo = Memo(memoId: -1, memo: "", backColor: 50);
   /** テキストコントローラ */
   TextEditingController controller = TextEditingController();
   /** フォントスタイル */
@@ -77,8 +78,18 @@ class EditingMemoState extends State<EditingMemo> {
           IconButton(
             icon: Icon(Icons.delete), 
             onPressed: () async {
-              await SQLite.deleteMemo(_memo.memoId);
-              Navigator.pop(context,);
+              /** ダイアログ表示 */
+              await showDialog<String>(
+                context: context,
+                barrierDismissible: false,
+                builder: (BuildContext context) {
+                  return DeleteDialog(memoId: _memo.memoId,);
+                }
+              ).then((value) async {
+                if(value != "cancel"){
+                  Navigator.pop(context,);
+                }
+              });
             },
           )
         ],
