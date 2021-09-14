@@ -151,7 +151,9 @@ class SQLite {
     /** 旧付箋リストのメモIDリストを取得 */
     List<int> memoIds = await getMemoIds();
     /** 削除するメモを取り除く */
-    memoIds.remove(memoId);
+    int  index = memoIds.indexOf(memoId);
+    memoIds[index] = 0;
+    // memoIds.remove(memoId);
     /** 新しい memoOrder を登録 */
     await renewMemoOrder(memoIds);
     /** メモ本体を削除 */
